@@ -1,0 +1,20 @@
+﻿<Window x:Class="MaskRaster.frmSelectLayer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MaskRaster"
+        mc:Ignorable="d"
+        Title="Layer Selection" Height="413" Width="812">
+    <Grid Width="812" Height="265">
+        <Label x:Name="label" Content="Select A Raster Layer:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="192"/>
+        <ComboBox x:Name="cboRasterLayers" HorizontalAlignment="Left" Margin="146,14,0,0" VerticalAlignment="Top" Width="644"/>
+        <Label x:Name="label1" Content="Select a Vector Layer:" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top" Width="140"/>
+        <ComboBox x:Name="cboVectorLayers" HorizontalAlignment="Left" Margin="146,55,0,0" VerticalAlignment="Top" Width="644"/>
+        <RadioButton x:Name="rdoMask" Content="Mask" HorizontalAlignment="Left" Margin="146,109,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="label2" Content="Pick an operation" HorizontalAlignment="Left" Margin="15,103,0,0" VerticalAlignment="Top" Width="108"/>
+        <RadioButton x:Name="rdoExtract" Content="Extract Value" HorizontalAlignment="Left" Margin="229,109,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnExecute" Content="Do It" HorizontalAlignment="Left" Margin="639,106,0,0" VerticalAlignment="Top" RenderTransformOrigin="-1.041,-0.444" Width="151"/>
+
+    </Grid>
+</Window>

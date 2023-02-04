@@ -26,6 +26,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Core.Data;
 using System.IO;
 using ArcGIS.Desktop.Core;
+using System.Security.Principal;
 
 namespace MaskRaster
 {
@@ -38,7 +39,7 @@ namespace MaskRaster
         public MaskRasterTool()
         {
             // Indicate the tool is a sketch tool.
-            IsSketchTool = true;
+            IsSketchTool = false;
             // Set the sketch type of the tool to be Rectangle.
             SketchType = SketchGeometryType.Rectangle;
             // Set the output mode of the sketch to be in map coordinates.
@@ -63,5 +64,36 @@ namespace MaskRaster
             // Pass the call onwards.
             return await base.OnSketchCompleteAsync(geometry);
         }
+
+        protected override void OnToolMouseUp(MapViewMouseButtonEventArgs e)
+        {
+            base.OnToolMouseUp(e);
+
+            if (MapView.Active != null)
+            {
+                // Get the active map view.
+                var mapView = MapView.Active;
+                //var list = mapView.Map.FindLayers(lyrname);
+                var lyr_list = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
+
+                if (lyr_list == null || lyr_list.Count == 0)
+                {
+                    MessageBox.Show("No Building Footprint Layer found. Please add it.");
+                    return;
+                }
+
+                var frmSelect = new frmSelectLayer();
+                frmSelect.ShowDialog();
+            }
+            MaskRasterVM.MaskRaster(null);
+
+            /*
+            await QueuedTask.Run(() =>
+            {
+                CreateAnimationFromPath.TargetPoint = MapView.Active.ClientToMap(e.ClientPoint);
+            });
+            */
+        }
+
     }
 }
