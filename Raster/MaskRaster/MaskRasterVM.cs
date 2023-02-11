@@ -34,6 +34,9 @@ namespace MaskRaster
     /// </summary>
     static class MaskRasterVM
     {
+        static int _bandindex = 0;
+
+        public static List<Alternative> Alternatives;
 
         public static PixelBlock GetPixelBlock(Raster inputRaster, Geometry geometry)
         {
@@ -129,6 +132,7 @@ namespace MaskRaster
                     BasicFeatureLayer lyr_fp = buildingfp as BasicFeatureLayer;
 
 
+
                     // Get the list of selected layers.
                     IReadOnlyList<Layer> selectedLayerList = mapView.GetSelectedLayers();
                     if (selectedLayerList.Count == 0)
@@ -202,7 +206,7 @@ namespace MaskRaster
                                             RasterBand rb = inputRaster.GetBand(0);
                                             //var rt = rb.GetAttributeTable();
                                             //PixelBlock pb = inputRaster.CreatePixelBlock(pixelBlockWidth, pixelBlockHeight);
-                                            
+
                                             //Method 1: read raster data within a polygon shape geometry
                                             // determine the cursor position in mapping coordinates
                                             //var pixelLocationAtRaster = inputRaster.MapToPixel(shape_pt.X, shape_pt.Y);
@@ -211,7 +215,7 @@ namespace MaskRaster
                                             var shpTopLeftCornerAtRaster = inputRaster.MapToPixel(shape.Extent.XMin, shape.Extent.YMax);
                                             // fill the pb (PixelBlock) with the pointer location
                                             inputRaster.Read(shpTopLeftCornerAtRaster.Item1, shpTopLeftCornerAtRaster.Item2, pb);
-                                            var rasValueArray =  pb.GetPixelData(0, false);
+                                            var rasValueArray = pb.GetPixelData(0, false);
                                             Console.WriteLine("Stop here");
                                             /*
                                             if (pb != null)
@@ -235,7 +239,7 @@ namespace MaskRaster
                                                 Console.WriteLine(v.ToString());
                                             }
                                             */
-                                            
+
                                             //Method 2: read raster data by a point with fixed window
                                             // create a pixelblock representing a 3x3 window to hold the raster values
                                             var pixelBlock = inputRaster.CreatePixelBlock(3, 3);
@@ -268,7 +272,7 @@ namespace MaskRaster
                                                 var pixelLocationAtRaster = inputRaster.MapToPixel(shape_ctrpt.X, shape_ctrpt.Y);
 
                                                 // fill the pixelblock with the pointer location
-                                                inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 -1, pixelBlock);
+                                                inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
 
                                                 var _bandindex = 0;
 
@@ -361,6 +365,179 @@ namespace MaskRaster
             catch (Exception exc)
             {
                 MessageBox.Show("Exception caught in MaskRaster: " + exc.Message);
+            }
+        }
+
+        /// <summary>
+        /// Read raster pixels values per building footprint, based on the building footprint geometries,
+        /// collate and output into textfile in user specified folder
+        /// </summary>
+        /// <param name="geometry">Nominal (i.e., null) rectangle geometry from the Add-in trigger.</param>
+        public static async void ReadRaster(FeatureLayer footprintLayer, GridDataType gridDataType,  int bandindex = 0)
+        {
+            if (MapView.Active == null)
+            {
+                return;
+            }
+            _bandindex = bandindex; 
+            if (_bandindex < 0)
+            {
+                MessageBox.Show($"Should only read from first band of raster dataset.");
+                return;
+            }
+
+            try
+            {
+                BasicFeatureLayer lyr_fp = footprintLayer as BasicFeatureLayer;
+                //get all raster layers
+                var lyr_rasters = MapView.Active.Map.GetLayersAsFlattenedList().OfType<RasterLayer>().ToList();
+
+                // iterate through all grids
+                foreach (Layer firstSelectedLayer in lyr_rasters)
+                {
+                    // Working with rasters requires the MCT.
+                    await QueuedTask.Run(() =>
+                    {
+                        if (footprintLayer.ConnectionStatus == ConnectionStatus.Broken)
+                            throw new ApplicationException("Footprint layer connection broken");
+
+                        #region Get the raster dataset from the currently selected layer
+                        // Get the raster layer from the selected layer.
+                        Raster inputRaster = (firstSelectedLayer as RasterLayer).GetRaster();
+                        // Get the basic raster dataset from the raster.
+                        BasicRasterDataset basicRasterDataset = inputRaster.GetRasterDataset();
+                        #endregion
+
+                        //get the matching alternative
+                        var alt = Alternatives.Where(a => a.layerName(gridDataType) == firstSelectedLayer.Name).FirstOrDefault();
+
+                        #region read raster values
+
+                        // If the map spatial reference is different from the spatial reference of the input raster,
+                        // set the map spatial reference on the input raster. This will ensure the map points are 
+                        // correctly reprojected to image points.
+
+                        if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
+                            inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
+
+                        FeatureClass featfp = footprintLayer.GetFeatureClass();
+                        using (var rc = featfp.Search())
+                        {
+                            while (rc.MoveNext())
+                            {
+                                using (var record = rc.Current)
+                                {
+                                    Feature f = record as Feature;
+                                    Geometry shape = f.GetShape();
+
+                                    int buildingid = Convert.ToInt32(record["BID"]);
+
+                                    int pixelBlockWidth = Convert.ToInt32(shape.Extent.XMax - shape.Extent.XMin);
+                                    int pixelBlockHeight = Convert.ToInt32(shape.Extent.YMax - shape.Extent.YMin);
+
+                                    RasterBand rb = inputRaster.GetBand(0);
+
+                                    //Method 2: read raster data by a point with fixed window
+                                    // create a pixelblock representing a 3x3 window to hold the raster values
+                                    var pixelBlock = inputRaster.CreatePixelBlock(3, 3);
+                                    var shape_ctrpt = shape.Extent.CenterCoordinate.ToMapPoint();
+
+                                    // create a container to hold the pixel values
+                                    Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
+
+                                    // reproject the raster envelope to match the map spatial reference
+                                    var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
+
+                                    // if the cursor is within the extent of the raster
+                                    if (GeometryEngine.Instance.Contains(rasterEnvelope, shape_ctrpt))
+                                    {
+                                        // find the map location expressed in row,column of the raster
+                                        var pixelLocationAtRaster = inputRaster.MapToPixel(shape_ctrpt.X, shape_ctrpt.Y);
+
+                                        // fill the pixelblock with the pointer location
+                                        inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
+
+                                        // retrieve the actual pixel values from the pixelblock representing the red raster band
+                                        pixelArray = pixelBlock.GetPixelData(_bandindex, false);
+                                    }
+                                    else
+                                    {
+                                        // fill the container with 0s
+                                        Array.Clear(pixelArray, 0, pixelArray.Length);
+                                    }
+
+                                    double ras_val = 0;
+                                    int num = 0;
+                                    int method = 1; // 0 will be a direct read; 1 will be an average
+                                    int ind = 0;
+                                    int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
+                                    //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
+                                    foreach (float v in pixelArray)
+                                    {
+                                        if (method == 0)
+                                        { 
+                                            if (ind == centerIndex)
+                                            {
+                                                ras_val = v;
+                                                break;
+                                            }
+                                        } 
+                                        else
+                                        {
+                                            if (v >= 0)
+                                            {
+                                                ras_val += v;
+                                                num++;
+                                            }
+                                        }
+                                        ind++;
+                                    }
+                                    if (method == 0)
+                                    {
+                                        if (ras_val < 0)
+                                        {
+                                            ras_val = -9999;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (num > 0)
+                                        {
+                                            ras_val = ras_val / num;
+                                        }
+                                        else
+                                        {
+                                            ras_val = -9999;
+                                        }
+                                    }
+
+                                    //record result
+                                    if (!Alternative.BuildingXY.ContainsKey(buildingid))
+                                    {
+                                        //only save one copy of the building location x,y
+                                        //assuming all alternatives are using the same set of building footprints
+                                        Alternative.BuildingXY.Add(buildingid, (shape_ctrpt.X, shape_ctrpt.Y));
+                                    }
+                                    if (gridDataType == GridDataType.WSEMAX)
+                                    {
+                                        alt.BuildingWSEmax.Add(buildingid, ras_val);
+                                    }
+                                    else
+                                    {
+                                        alt.BuildingFloodDepth.Add(buildingid, ras_val);
+                                        alt.BuildingFlooded.Add(buildingid, ras_val > 0);
+                                    }
+                                }
+                            }
+                        }
+                        #endregion
+                    });
+                    Console.WriteLine($"Read Raster: {firstSelectedLayer.Name}\n");
+                }
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show("Exception caught in ReadRaster: " + exc.Message);
             }
         }
 

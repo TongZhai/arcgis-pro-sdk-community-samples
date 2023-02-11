@@ -49,4 +49,35 @@ limitations under the License.
       </controls>
     </insertModule>
   </modules>
+  <SMCAlternatives id="Alternatives" basefolder="C:\Data\SixMileCreek\RAS_Alt_Refined">
+    <Alternative type="WSEMAX" id="10Yr_Current">10PCT\WSE (Max) Current 10PCT.vrt</Alternative>
+    <Alternative type="WSEMAX" id="50Yr_Current">2PCT\WSE (Max) Current 2PCT.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Current">6_Mile_refined\WSE (Max) Current 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="500Yr_Current">02PCT\WSE (Max) Current 02PCT.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_Hwy14NorthBridge">AltHwy14North10PCT\WSE (Max) AltHwy14North 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Hwy14NorthBridge">AltHwy14North\WSE (Max) AltHwy14North 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_Hwy14SouthBridge">AltHwy14South10PCT\WSE (Max) AltHwy14South 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Hwy14SouthBridge">AltHwy14South1PCT\WSE (Max) AltHwy14South 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_Hwy14Bridges">AltHwy1410PCT\WSE (Max) AltHwy14 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Hwy14Bridges">AltHwy141PCT\WSE (Max) AltHwy14 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_LeveeSouth">AltLVSouth10PCT\WSE (Max) AltLVSouth 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_LeveeSouth">AltLVSouth1PCT\WSE (Max) AltLVSouth 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_LeveeSouthNorth">AltLVSouthNorth10PCT\WSE (Max) AltLVSouthNorth 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_LeveeSouthNorth">AltLVSouthNorth1PCT\WSE (Max) AltLVSouthNorth 100Yr.vrt</Alternative>
+
+    <Alternative type="DEPTHMAX" id="10Yr_Current">10PCT\Depth (Max) Current 10PCT.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="50Yr_Current">2PCT\Depth (Max) Current 2PCT.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Current">6_Mile_refined\Depth (Max) Current Refined.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="500Yr_Current">02PCT\Depth (Max) Current 02PCT.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_Hwy14NorthBridge">AltHwy14North10PCT\Depth (Max) AltHwy14North 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Hwy14NorthBridge">AltHwy14North\Depth (Max) AltHwy14N 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_Hwy14SouthBridge">AltHwy14South10PCT\Depth (Max) AltHwy14South 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Hwy14SouthBridge">AltHwy14South1PCT\Depth (Max) AltHwy14South 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_Hwy14Bridges">AltHwy1410PCT\Depth (Max) AltHwy14 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Hwy14Bridges">AltHwy141PCT\Depth (Max) AltHwy14 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_LeveeSouth">AltLVSouth10PCT\Depth (Max) AltLVSouth 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_LeveeSouth">AltLVSouth1PCT\Depth (Max) AltLVSouth 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_LeveeSouthNorth">AltLVSouthNorth10PCT\Depth (Max) AltLVSouthNorth 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_LeveeSouthNorth">AltLVSouthNorth1PCT\Depth (Max) AltLVSouthNorth 100Yr.vrt</Alternative>
+  </SMCAlternatives>
 </ArcGIS>

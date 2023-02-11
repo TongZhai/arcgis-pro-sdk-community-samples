@@ -82,10 +82,13 @@ namespace MaskRaster
                     return;
                 }
 
-                var frmSelect = new frmSelectLayer();
+                var alts = Util.GetConfigDamlSMCAlternatives();
+                MaskRasterVM.Alternatives = alts;
+
+                var frmSelect = new frmSelectLayer(alts);
                 frmSelect.ShowDialog();
             }
-            MaskRasterVM.MaskRaster(null);
+            //MaskRasterVM.MaskRaster(null);
 
             /*
             await QueuedTask.Run(() =>

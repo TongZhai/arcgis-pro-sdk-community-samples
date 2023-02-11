@@ -8,13 +8,16 @@
         Title="Layer Selection" Height="413" Width="812">
     <Grid Width="812" Height="265">
         <Label x:Name="label" Content="Select A Raster Layer:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="192"/>
-        <ComboBox x:Name="cboRasterLayers" HorizontalAlignment="Left" Margin="146,14,0,0" VerticalAlignment="Top" Width="644"/>
+        <ComboBox x:Name="cboRasterLayers" HorizontalAlignment="Left" Margin="146,14,0,0" VerticalAlignment="Top" Width="492"/>
         <Label x:Name="label1" Content="Select a Vector Layer:" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top" Width="140"/>
-        <ComboBox x:Name="cboVectorLayers" HorizontalAlignment="Left" Margin="146,55,0,0" VerticalAlignment="Top" Width="644"/>
-        <RadioButton x:Name="rdoMask" Content="Mask" HorizontalAlignment="Left" Margin="146,109,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="label2" Content="Pick an operation" HorizontalAlignment="Left" Margin="15,103,0,0" VerticalAlignment="Top" Width="108"/>
-        <RadioButton x:Name="rdoExtract" Content="Extract Value" HorizontalAlignment="Left" Margin="229,109,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnExecute" Content="Do It" HorizontalAlignment="Left" Margin="639,106,0,0" VerticalAlignment="Top" RenderTransformOrigin="-1.041,-0.444" Width="151"/>
+        <ComboBox x:Name="cboVectorLayers" HorizontalAlignment="Left" Margin="146,55,0,0" VerticalAlignment="Top" Width="492"/>
+        <RadioButton x:Name="rdoWSEMax" Content="WSEmax" HorizontalAlignment="Left" Margin="171,109,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.21,0.595"/>
+        <Label x:Name="label2" Content="Select Grid Data Type" HorizontalAlignment="Left" Margin="15,103,0,0" VerticalAlignment="Top" Width="135"/>
+        <RadioButton x:Name="rdoDepthMax" Content="DepthMax" HorizontalAlignment="Left" Margin="268,108,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnGetVectors" Content="Get Vectors" HorizontalAlignment="Left" Margin="651,55,0,0" VerticalAlignment="Top" RenderTransformOrigin="-1.041,-0.444" Width="151" Click="btnGetVectors_Click"/>
+        <Button x:Name="btnLoadGridLayers" Content="Load Grid Data Layers" HorizontalAlignment="Left" Margin="15,149,0,0" VerticalAlignment="Top" Click="btnLoadGridLayers_Click"/>
+        <Button x:Name="btnReadGridLayers" Content="Read Grids" HorizontalAlignment="Left" Margin="153,149,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.133,-0.178" Click="btnReadGridLayers_Click"/>
+        <Button x:Name="btnGetRasters" Content="Get Rasters" HorizontalAlignment="Left" Margin="651,15,0,0" VerticalAlignment="Top" Width="151"/>
 
     </Grid>
 </Window>
