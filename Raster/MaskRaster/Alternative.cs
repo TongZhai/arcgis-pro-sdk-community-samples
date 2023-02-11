@@ -12,6 +12,7 @@ namespace MaskRaster
     public class Alternative
     {
         public static string basefolder;
+        public static READRASTERMETHOD method;
         public string Name { get; set; }
         public string PathWSEMAX { get; set; }
         public string PathDEPTHMAX { get; set; }

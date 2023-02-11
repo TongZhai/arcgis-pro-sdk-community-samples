@@ -15,6 +15,12 @@ namespace MaskRaster
 		DEPTHMAX
 	}
 
+	public enum READRASTERMETHOD
+	{
+		POINTDIRECT,
+		BLOCKAVERAGE
+	}
+
     internal class Util
     {
 		static string _configfile = @"C:\dev\arcgis-pro-sdk-community-samples\Raster\MaskRaster\Config.daml";
@@ -53,6 +59,16 @@ namespace MaskRaster
 				
 				XmlNodeList alt_list_block = xDoc.GetElementsByTagName("SMCAlternatives");
 				Alternative.basefolder = alt_list_block[0].Attributes["basefolder"].Value;
+				var lmethod = alt_list_block[0].Attributes["method"].Value;
+				switch(lmethod)
+				{
+					case nameof(READRASTERMETHOD.POINTDIRECT):
+						Alternative.method = READRASTERMETHOD.POINTDIRECT;
+						break;
+					case nameof(READRASTERMETHOD.BLOCKAVERAGE):
+						Alternative.method = READRASTERMETHOD.BLOCKAVERAGE;
+						break;
+				}
 				List<Alternative> alts = new List<Alternative>();
 				foreach (XmlNode xalt in alt_list_block[0])
 				{

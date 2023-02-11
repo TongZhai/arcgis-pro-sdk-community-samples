@@ -468,13 +468,13 @@ namespace MaskRaster
 
                                     double ras_val = 0;
                                     int num = 0;
-                                    int method = 1; // 0 will be a direct read; 1 will be an average
+                                    //int method = 1; // 0 will be a direct read; 1 will be an average
                                     int ind = 0;
                                     int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
                                     //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
                                     foreach (float v in pixelArray)
                                     {
-                                        if (method == 0)
+                                        if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
                                         { 
                                             if (ind == centerIndex)
                                             {
@@ -492,7 +492,7 @@ namespace MaskRaster
                                         }
                                         ind++;
                                     }
-                                    if (method == 0)
+                                    if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
                                     {
                                         if (ras_val < 0)
                                         {
