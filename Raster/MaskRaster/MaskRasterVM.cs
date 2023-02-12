@@ -389,15 +389,25 @@ namespace MaskRaster
             try
             {
                 BasicFeatureLayer lyr_fp = footprintLayer as BasicFeatureLayer;
+                var numBuildings = await QueuedTask.Run(() => { return (footprintLayer as FeatureLayer).GetTable().GetCount(); });
                 //get all raster layers
                 var lyr_rasters = MapView.Active.Map.GetLayersAsFlattenedList().OfType<RasterLayer>().ToList();
 
+                /*
+                ProgressorSource ps = new ProgressorSource($"Reading grids: ", false);
+                //ps.Max = await QueuedTask.Run(() => { return (uint)((footprintLayer as FeatureLayer).GetTable().GetCount()); });
+                ps.Max = (uint) lyr_rasters.Count;
+                ps.Progressor.Value = 0;
+                */
                 // iterate through all grids
                 foreach (Layer firstSelectedLayer in lyr_rasters)
                 {
                     // Working with rasters requires the MCT.
+                    ProgressorSource ps = new ProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", false);
                     await QueuedTask.Run(() =>
                     {
+                        ps.Max = (uint) numBuildings;
+                        ps.Progressor.Value = 0;
                         if (footprintLayer.ConnectionStatus == ConnectionStatus.Broken)
                             throw new ApplicationException("Footprint layer connection broken");
 
@@ -528,11 +538,19 @@ namespace MaskRaster
                                         alt.BuildingFlooded.Add(buildingid, ras_val > 0);
                                     }
                                 }
+                                ps.Progressor.Value++;
+                                ps.Progressor.Status = (ps.Progressor.Value * 100 / ps.Max) + @" % Completed";
+                                ps.Progressor.Message = $"Read {firstSelectedLayer.Name} per Building #{ps.Progressor.Value}";
                             }
                         }
                         #endregion
-                    });
-                    Console.WriteLine($"Read Raster: {firstSelectedLayer.Name}\n");
+                    }, ps.Progressor);
+                    System.Diagnostics.Debug.WriteLine($"Read Raster: {firstSelectedLayer.Name}\n");
+                    /*
+                    ps.Progressor.Value++;
+                    ps.Progressor.Status = (ps.Progressor.Value * 100 / ps.Max) + @" % Completed";
+                    ps.Progressor.Message = $"Finished reading {firstSelectedLayer.Name}";
+                    */
                 }
             }
             catch (Exception exc)
