@@ -69,6 +69,8 @@ namespace MaskRaster
         {
             base.OnToolMouseUp(e);
 
+            //Test(); should be await Test()
+
             if (MapView.Active != null)
             {
                 // Get the active map view.
@@ -96,6 +98,33 @@ namespace MaskRaster
                 CreateAnimationFromPath.TargetPoint = MapView.Active.ClientToMap(e.ClientPoint);
             });
             */
+        }
+
+        /// <summary>
+        /// This is just an example of how to setup a progress bar
+        /// It appears to be known that ArcGIS Pro's progress bar doesn't work
+        /// as demonstrated here, the dialog never shows.
+        /// </summary>
+        /// <returns></returns>
+        private static async Task Test()
+        {
+            using (var progDialog = new ArcGIS.Desktop.Framework.Threading.Tasks.
+                            ProgressDialog("Showing Test Progress", "Canceled", 100, false))
+            {
+                CancelableProgressorSource cps = new CancelableProgressorSource(progDialog)
+                {
+                    Max = 100
+                };
+                progDialog.Show();
+                for (int idx = 0; idx < 10; idx++)
+                {
+                    cps.Progressor.Value += 10;
+                    cps.Progressor.Status = (cps.Progressor.Value * 100 / cps.Progressor.Max) + @" % Completed";
+                    cps.Progressor.Message = "Message " + cps.Progressor.Value;
+                    await Task.Delay(1000);
+                }
+                progDialog.Hide();
+            }
         }
 
     }

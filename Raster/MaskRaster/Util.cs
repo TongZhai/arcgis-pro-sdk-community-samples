@@ -99,5 +99,13 @@ namespace MaskRaster
 			}
 			return null;
 		}
+
+		public static void SetupBCATemplate()
+		{
+			
+
+		}
+
+
     }
 }

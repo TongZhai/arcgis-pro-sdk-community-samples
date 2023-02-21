@@ -403,9 +403,11 @@ namespace MaskRaster
                 foreach (Layer firstSelectedLayer in lyr_rasters)
                 {
                     // Working with rasters requires the MCT.
-                    ProgressorSource ps = new ProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", false);
+                    CancelableProgressorSource ps = new CancelableProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", "Cancel", false);
                     await QueuedTask.Run(() =>
                     {
+                        var srlatlong = new SpatialReferenceBuilder(4326);
+
                         ps.Max = (uint) numBuildings;
                         ps.Progressor.Value = 0;
                         if (footprintLayer.ConnectionStatus == ConnectionStatus.Broken)
@@ -469,6 +471,7 @@ namespace MaskRaster
 
                                         // retrieve the actual pixel values from the pixelblock representing the red raster band
                                         pixelArray = pixelBlock.GetPixelData(_bandindex, false);
+
                                     }
                                     else
                                     {
@@ -522,11 +525,28 @@ namespace MaskRaster
                                     }
 
                                     //record result
-                                    if (!Alternative.BuildingXY.ContainsKey(buildingid))
+                                    if (!Alternative.BuildingLatLong.ContainsKey(buildingid))
                                     {
-                                        //only save one copy of the building location x,y
+                                        //only save one copy of the building location x,y (lat-long) and footprint size
                                         //assuming all alternatives are using the same set of building footprints
-                                        Alternative.BuildingXY.Add(buildingid, (shape_ctrpt.X, shape_ctrpt.Y));
+
+                                        /* Try to calculate lat-long from Stateplane x,y
+                                         * looks like it is not possible... */
+                                        /*
+                                        var llcoord = new Coordinate2D(shape_ctrpt.X, shape_ctrpt.Y);
+                                        var mp = llcoord.ToMapPoint(srlatlong.BaseGeographic);
+                                        var g = srlatlong.BaseGeographic.GcsWkid;
+                                        var g1 = srlatlong.IsGeographic;
+                                        var g2 = srlatlong.BaseGeographic.LeftLongitude;
+                                        var g3 = srlatlong.BaseGeographic.RightLongitude;
+                                        */
+                                        
+                                        //Alternative.BuildingXY.Add(buildingid, (shape_ctrpt.X, shape_ctrpt.Y));
+                                        double latitude = Convert.ToDouble(record["Latitude"]);
+                                        double longitude = Convert.ToDouble(record["Longitude"]);
+                                        double buildingfootprintsqft = Convert.ToDouble(record["Shape_Area"]);
+                                        Alternative.BuildingLatLong.Add(buildingid, (latitude, longitude));
+                                        Alternative.BuildingFirstFloorSqFt.Add(buildingid, buildingfootprintsqft);
                                     }
                                     if (gridDataType == GridDataType.WSEMAX)
                                     {
