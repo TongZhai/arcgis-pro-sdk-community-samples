@@ -265,6 +265,44 @@ namespace MaskRaster
             }
         }
 
+        public static Dictionary<int, Building> GetBuildingsIn500YearFloodplain()
+        {
+            Dictionary<int, Building> l = new Dictionary<int, Building>();
+            double depth = 0;
+            double? WSEmax500Yr = null;
+            double? WSEmaxCurrent = null;
+            foreach(int b_key in Buildings.Keys)
+            {
+                depth = 0;
+                WSEmax500Yr = Buildings[b_key].WSEmax["500Yr_Current"];
+                WSEmaxCurrent =Buildings[b_key].TerrainElevationFt;
+
+                if (WSEmaxCurrent != null && WSEmax500Yr != null) 
+                { 
+                    depth = WSEmax500Yr.Value - WSEmaxCurrent.Value;
+                }
+                if (depth > 0)
+                {
+                    l.Add(b_key, Buildings[b_key]);
+                }
+            }
+            return l;
+        }
+        public static Dictionary<int, Building> GetBuildingsIn500YearFloodplainByDepthmax()
+        {
+            Dictionary<int, Building> l = new Dictionary<int, Building>();
+            double? depthMax = 0;
+            foreach(int b_key in Buildings.Keys)
+            {
+                depthMax = Buildings[b_key].Depthmax["500Yr_Current"];
+                if (depthMax != null && depthMax > 0)
+                {
+                    l.Add(b_key, Buildings[b_key]);
+                }
+            }
+            return l;
+        }
+
         public static void SetupBCAInputs(ProgressBar pb, List<Alternative> alts, Alternative selectedAlternative)
         {
             pb.Minimum = 0;
@@ -272,7 +310,10 @@ namespace MaskRaster
             pb.Value = 1;
 
             int column;
-            int[] building_keys = Buildings.Keys.ToArray();
+            int row;
+            Dictionary<int, Building> b_in_500YrFP = GetBuildingsIn500YearFloodplain();
+            //int[] building_keys = Buildings.Keys.ToArray();
+            int[] building_keys = b_in_500YrFP.Keys.ToArray();
 
             //Riverine Flood worksheet setup
             var worksheet = BCAWorkbook.Worksheets[BCA_Worksheet1] as Worksheet;
@@ -296,9 +337,11 @@ namespace MaskRaster
                         */
                         break;
                     case 2: //street address
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = Buildings[bid].Address;
+                            myValues[row, 0] = Buildings[bid].Address;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         /*
@@ -308,427 +351,480 @@ namespace MaskRaster
                         */
                         break;
                     case 3: //city
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = Building.City; 
+                            myValues[row, 0] = Building.City;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 4: //State
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = Building.State; 
+                            myValues[row, 0] = Building.State;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 5: //ZipCode
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = Building.ZipCode; 
+                            myValues[row, 0] = Building.ZipCode;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 6: //County
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = Building.County; 
+                            myValues[row, 0] = Building.County;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 7: //Latitude 
                         double? lat;
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
                             lat = Buildings[bid].latitude;
-                            myValues[bid, 0] = lat == null? "" : lat.ToString();
+                            myValues[row, 0] = lat == null ? "" : lat.ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 8: //Longitude
                         double? lon;
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
                             lon = Buildings[bid].longitude;
-                            myValues[bid, 0] = lon == null? "" : lon.ToString();
+                            myValues[row, 0] = lon == null ? "" : lon.ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 9: //Structure Type
-                        string ot = ""; 
+                        string ot = "";
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Res") || ot.StartsWith("Mobi") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = (nameof(EStructureType.Residential_Building)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EStructureType.Residential_Building)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Fire") || ot.StartsWith("Health") || ot.StartsWith("Polic"))
                             {
-                                myValues[bid, 0] = (nameof(EStructureType.Critical_Facility_Building)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EStructureType.Critical_Facility_Building)).Replace("_", " ");
                             }
                             else
                             {
-                                myValues[bid, 0] = (nameof(EStructureType.Non_Residential_Building)).Replace('_', ' ').Replace("Non R", "Non-R");
+                                myValues[row, 0] = (nameof(EStructureType.Non_Residential_Building)).Replace('_', ' ').Replace("Non R", "Non-R");
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 10: //Mitigation Action Type
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = (nameof(EMitigationActionType.Drainage_Improvement)).Replace("_", " ");
+                            myValues[row, 0] = (nameof(EMitigationActionType.Drainage_Improvement)).Replace("_", " ");
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 11: //Project Useful Life
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = "50";
+                            myValues[row, 0] = "50";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 12: //Mitigation Project Cost $
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = "1.0"; //this could be the total cost of project/number of buildings
+                            myValues[row, 0] = "1.0"; //ToDo: this could be the total cost of project/number of buildings
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 13: //Use default # of years of maintenance
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = nameof(EUseDefaultYearsMaintenance.Yes);
+                            myValues[row, 0] = nameof(EUseDefaultYearsMaintenance.Yes);
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 14: //# of years of maintenance
                         /*
+                        row=0;
                         foreach (int bid in keys)
                         {
-                            myValues[bid, 0] = "";
+                            myValues[row, 0] = "";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         */
                         break;
                     case 15: //Annual maintenance cost
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = "0";
+                            myValues[row, 0] = "0";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 16: //Lowest floor elevation of property
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[bid, 0] = (Buildings[bid].TerrainElevationFt).ToString();
+                            myValues[row, 0] = (Buildings[bid].TerrainElevationFt).ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 17: //Streambed Elevation at Property location
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
                             //assume streambed is just the terrain elevation as this is in the floodplain???
-                            myValues[bid, 0] = (Buildings[bid].TerrainElevationFt).ToString();
+                            myValues[row, 0] = (Buildings[bid].TerrainElevationFt).ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 18: //Feet lowest floor is being raised
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   //Only required if mitigation action is: Elevation
-                            myValues[bid, 0] = "";
+                            myValues[row, 0] = "";
+                            row++;
                         }
                         //FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 19: //Elevation for the top of barrier or floodproofing in ft
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   //Only required if mitigation action is: floodproofing; others blank
-                            myValues[bid, 0] = "";
+                            myValues[row, 0] = "";
+                            row++;
                         }
                         //FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 20: //Building Type (residential)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   //Only required if residential structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeResidential.Manufactured_Home)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeResidential.Manufactured_Home)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Res"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeResidential.One_Story)).Replace("_", " ");
-                            } 
+                                myValues[row, 0] = (nameof(EBuildingTypeResidential.One_Story)).Replace("_", " ");
+                            }
                             else if (ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeResidential.Two_or_More_Stories)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeResidential.Two_or_More_Stories)).Replace("_", " ");
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 21: //Building Use (non-residential)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   //Only required if non-residential structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (ot.StartsWith("Apart"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM1];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM1];
                             }
                             else if (ot.StartsWith("Comm"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM1];
-                            } 
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM1];
+                            }
                             else if (ot.StartsWith("Muni") || ot.StartsWith("Runw"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.GOV1];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.GOV1];
                             }
                             else if (ot.StartsWith("Fire") || ot.StartsWith("Police"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.GOV2];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.GOV2];
                             }
                             else if (ot.StartsWith("Heal"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM6];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM6];
                             }
                             else if (ot.StartsWith("Ind"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.IND2];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.IND2];
                             }
                             else if (ot.StartsWith("Rec"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM8];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.COM8];
                             }
                             else if (ot.StartsWith("Lib") || ot.StartsWith("Schoo"))
                             {
-                                myValues[bid, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.EDU1];
+                                myValues[row, 0] = Building.DictBuildingUseNonResidential[EBuildingUseNonResidential.EDU1];
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 22: //Building type (Non-Residential)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   //Only required if non-residential /critical facility structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (ot.StartsWith("Apart"))
                             {
                                 //Apartment is considered as Non-Residential according to FEMA template
-                                myValues[bid, 0] = nameof(EBuildingTypeNonResidential.Apartment);
+                                myValues[row, 0] = nameof(EBuildingTypeNonResidential.Apartment);
                             }
                             else if (ot.StartsWith("Comm"))
                             {
-                                myValues[bid, 0] = nameof(EBuildingTypeNonResidential.Clothing);
-                            } 
+                                myValues[row, 0] = nameof(EBuildingTypeNonResidential.Clothing);
+                            }
                             else if (ot.StartsWith("Muni"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Office_One_Story)).Replace("_", " ").Replace("e S", "e-S");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Office_One_Story)).Replace("_", " ").Replace("e S", "e-S");
                             }
                             else if (ot.StartsWith("Runw"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
                             }
-                            else if (ot.StartsWith("Fire")) 
+                            else if (ot.StartsWith("Fire"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Police"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Heal"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Medical_Office)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Medical_Office)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Ind"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Industrial_Light)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Industrial_Light)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Rec"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Recreation)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Recreation)).Replace("_", " ");
                             }
                             else if (ot.StartsWith("Lib") || ot.StartsWith("Schoo"))
                             {
-                                myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Schools)).Replace("_", " ");
+                                myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Schools)).Replace("_", " ");
                             }
                             else
                             {
-                                //myValues[bid, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
+                                //myValues[row, 0] = (nameof(EBuildingTypeNonResidential.Service_Station)).Replace("_", " ");
                                 throw new ApplicationException($"Unknown Non-Residential Structure Type {ot}");
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 23: //Building is outside 100Yr flood area (non-residential/critical facility)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   //Only required if non-residential structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else
                             {
                                 if (Buildings[bid].WSEmax.ContainsKey("100Yr_Current") && Buildings[bid].WSEmax["100Yr_Current"] > Buildings[bid].TerrainElevationFt)
                                 {
-                                    myValues[bid, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.No);
+                                    myValues[row, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.No);
                                 }
                                 else if (Buildings[bid].Depthmax.ContainsKey("100Yr_Current") && Buildings[bid].Depthmax["100Yr_Current"] > 0)
                                 {
-                                    myValues[bid, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.No);
+                                    myValues[row, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.No);
                                 }
                                 else
                                 {
-                                    myValues[bid, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.Yes);
+                                    myValues[row, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.Yes);
                                 }
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 24: //Building has basement (Residential)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // For residential building: yes/no; other blank?
                             ot = Buildings[bid].OccupancyType;
-                            if (ot.StartsWith("Mobi")) 
+                            if (ot.StartsWith("Mobi"))
                             {
-                                myValues[bid, 0] = nameof(EBuildingHasBasementResidential.No);
+                                myValues[row, 0] = nameof(EBuildingHasBasementResidential.No);
                             }
                             else if (ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EBuildingHasBasementResidential.No); //ToDo: need to determine
+                                myValues[row, 0] = nameof(EBuildingHasBasementResidential.No); //ToDo: need to determine
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 25: //Building is engineered (Non-Residential/Critical Facility)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // For non-residential building: yes/no; other blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else
                             {
-                                myValues[bid, 0] = nameof(EBuildingIsEngineeredNonResidentialCriticalFacility.No); //ToDo: need to determine
+                                myValues[row, 0] = nameof(EBuildingIsEngineeredNonResidentialCriticalFacility.No); //ToDo: need to determine
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 26: //Building has active NFIP policy
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // For all buildings: yes/no;
                             // ToDo: need to determine
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EBuildingHasActiveNFIPPolicy.No);
+                                myValues[row, 0] = nameof(EBuildingHasActiveNFIPPolicy.No);
                             }
                             else
                             {
-                                myValues[bid, 0] = nameof(EBuildingHasActiveNFIPPolicy.No); 
+                                myValues[row, 0] = nameof(EBuildingHasActiveNFIPPolicy.No);
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 27: //Damage Curve
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             // ToDo: need to determine
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[6];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[6];
                             }
                             else if (ot.StartsWith("Res"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[8];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[8];
                             }
                             else if (ot.StartsWith("Apart"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[1];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[1];
                             }
                             else if (ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[8];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[8];
                             }
                             else if (ot.StartsWith("Comm"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[96];
-                            } 
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[96];
+                            }
                             else if (ot.StartsWith("Muni"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[5];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[5];
                             }
                             else if (ot.StartsWith("Runw"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[38];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[38];
                             }
-                            else if (ot.StartsWith("Fire")) 
+                            else if (ot.StartsWith("Fire"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[12];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[12];
                             }
                             else if (ot.StartsWith("Police"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[20];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[20];
                             }
                             else if (ot.StartsWith("Heal"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[14];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[14];
                             }
                             else if (ot.StartsWith("Ind"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[16];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[16];
                             }
                             else if (ot.StartsWith("Rec"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[22];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[22];
                             }
                             else if (ot.StartsWith("Lib") || ot.StartsWith("Schoo"))
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[27];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[27];
                             }
                             else
                             {
-                                myValues[bid, 0] = Building.DictDamageCurveBuildingTypes[5];
+                                myValues[row, 0] = Building.DictDamageCurveBuildingTypes[5];
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 28: //First Floor Area (Non-Residential/Critical Facility only) in sqft
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for non-residential and critical facility only, other blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else
                             {
-                                myValues[bid, 0] = (Buildings[bid].FirstFloorAreaSqFt).ToString();
+                                myValues[row, 0] = (Buildings[bid].FirstFloorAreaSqFt).ToString();
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 29: //Size of building in sq.ft
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures, enter total square footage for the building;
                             // for residential building, only livable area
@@ -736,466 +832,518 @@ namespace MaskRaster
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
                                 // for residential, the total square footage might be more than just living portion
-                                myValues[bid, 0] = (Buildings[bid].FirstFloorAreaSqFt).ToString();
+                                myValues[row, 0] = (Buildings[bid].FirstFloorAreaSqFt).ToString();
                             }
                             else
                             {
-                                myValues[bid, 0] = (Buildings[bid].FirstFloorAreaSqFt).ToString();
+                                myValues[row, 0] = (Buildings[bid].FirstFloorAreaSqFt).ToString();
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 30: //use default building replacement value i.e. $100/sqft
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             //ot = Alternative.BuildingOccupancyType[bid];
-                            myValues[bid, 0] = nameof(EUseDefaultBuildingReplacementValue.Yes);
+                            myValues[row, 0] = nameof(EUseDefaultBuildingReplacementValue.Yes);
                             Buildings[bid].UseDefaultBuildingReplacementValue = EUseDefaultBuildingReplacementValue.Yes;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 31: //Building replacement value, leave blank if above is Yes
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
-                            if(Buildings[bid].UseDefaultBuildingReplacementValue == EUseDefaultBuildingReplacementValue.No)
+                        {
+                            if (Buildings[bid].UseDefaultBuildingReplacementValue == EUseDefaultBuildingReplacementValue.No)
                             {
-                                myValues[bid, 0] = "150.0";
+                                myValues[row, 0] = "150.0";
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 32: //use default demolition threshold, i.e. 50%
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             //ot = Alternative.BuildingOccupancyType[bid];
-                            myValues[bid, 0] = nameof(EUseDefaultDemolitionThreshold.Yes);
+                            myValues[row, 0] = nameof(EUseDefaultDemolitionThreshold.Yes);
                             Buildings[bid].UseDefaultDemolitionThreshold = EUseDefaultDemolitionThreshold.Yes;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 33: //Demolition threshold value, leave blank if above is Yes
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
-                            if(Buildings[bid].UseDefaultDemolitionThreshold == EUseDefaultDemolitionThreshold.No)
+                        {
+                            if (Buildings[bid].UseDefaultDemolitionThreshold == EUseDefaultDemolitionThreshold.No)
                             {
-                                myValues[bid, 0] = "60"; // 10% more than default 50%
+                                myValues[row, 0] = "60"; // 10% more than default 50%
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 34: //use default building content value
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             //ot = Buildings[bid].OccupancyType;
-                            myValues[bid, 0] = nameof(EUseDefaultBuildingContentsValue.Yes);
+                            myValues[row, 0] = nameof(EUseDefaultBuildingContentsValue.Yes);
                             Buildings[bid].UseDefaultBuildingContentsValue = EUseDefaultBuildingContentsValue.Yes;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 35: //Building content value ($), leave blank if above is Yes
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             if (Buildings[bid].UseDefaultBuildingContentsValue == EUseDefaultBuildingContentsValue.No)
                             {
-                                myValues[bid, 0] = "1500.0";
+                                myValues[row, 0] = "1500.0";
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 36: //Residential building Utilities are elevated
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for residential only,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EUtilitiesAreElevatedResidential.Yes);
+                                myValues[row, 0] = nameof(EUtilitiesAreElevatedResidential.Yes);
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 37: //Annual street maintanence budget ($)// for acquisition projects only  (column 10 above)// others blank
                         /*
+                        row = 0;
                         foreach (int bid in keys)
                         {   
-                            myValues[bid, 0] = "";
+                            myValues[row, 0] = "";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         */
                         break;
                     case 38: //# street miles maintained// for acquisition projects only  (column 10 above)// others blank
                         /*
+                        row = 0;
                         foreach (int bid in keys)
                         {   
-                            myValues[bid, 0] = "";
+                            myValues[row, 0] = "";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         */
                         break;
                     case 39: //# street miles not need maintanence// for acquisition projects only  (column 10 above)// others blank
                         /*
+                        row = 0;
                         foreach (int bid in keys)
                         {   
-                            myValues[bid, 0] = "";
+                            myValues[row, 0] = "";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         */
                         break;
                     case 40: //Annual operating budget ($), for non-residential building only; others blank
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for non-residential building only other blank
                             // ToDo: need to determine
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (ot.StartsWith("Apart"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Apartment]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Apartment]).ToString();
                             }
                             else if (ot.StartsWith("Comm"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Commercial]).ToString();
-                            } 
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Commercial]).ToString();
+                            }
                             else if (ot.StartsWith("Muni"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Municipal]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Municipal]).ToString();
                             }
                             else if (ot.StartsWith("Runw"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Runway]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Runway]).ToString();
                             }
-                            else if (ot.StartsWith("Fire")) 
+                            else if (ot.StartsWith("Fire"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Fire]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Fire]).ToString();
                             }
                             else if (ot.StartsWith("Police"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Police]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Police]).ToString();
                             }
                             else if (ot.StartsWith("Heal"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Health]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Health]).ToString();
                             }
                             else if (ot.StartsWith("Ind"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Industrial]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Industrial]).ToString();
                             }
                             else if (ot.StartsWith("Rec"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Recreation]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Recreation]).ToString();
                             }
                             else if (ot.StartsWith("Lib"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Library]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.Library]).ToString();
                             }
                             else if (ot.StartsWith("Schoo"))
                             {
-                                myValues[bid, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.School]).ToString();
+                                myValues[row, 0] = (Building.DictBuildingAnnualOperatingBudgetBrookings[EBuildingTypeBrookings.School]).ToString();
                             }
+                            row++;
                         }
-                        
+
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 41: //Use default monthly cost of temporary space
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for non-residential critical facility only,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 Buildings[bid].UseDefaultMonthlyCostOfTemporarySpace = EUseDefaultMonthlyCostOfTemporarySpace.NA;
                             }
                             else
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultMonthlyCostOfTemporarySpace.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultMonthlyCostOfTemporarySpace.Yes);
                                 Buildings[bid].UseDefaultMonthlyCostOfTemporarySpace = EUseDefaultMonthlyCostOfTemporarySpace.Yes;
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 42: //Monthly cost of temp space ($/sqft/month)// for non-residential critical facility only, other blank
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else
                             {
-                                myValues[bid, 0] = ""; //ToDo: if above is no, then need to enter value building by building
+                                myValues[row, 0] = ""; //ToDo: if above is no, then need to enter value building by building
                                 if (Buildings[bid].UseDefaultMonthlyCostOfTemporarySpace == EUseDefaultMonthlyCostOfTemporarySpace.No)
                                 {
-                                    myValues[bid, 0] = "500.0";
+                                    myValues[row, 0] = "500.0";
                                 }
                                 else
                                 {
-                                    myValues[bid, 0] = "";
+                                    myValues[row, 0] = "";
                                 }
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 43: //Use default one time displacement cost
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for non-residential critical facility only,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 Buildings[bid].UseDefaultOneTimeDisplacementCost = EUseDefaultOneTimeDisplacementCost.NA;
                             }
                             else
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultOneTimeDisplacementCost.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultOneTimeDisplacementCost.Yes);
                                 Buildings[bid].UseDefaultOneTimeDisplacementCost = EUseDefaultOneTimeDisplacementCost.Yes;
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 44: //One time displacement cost ($/sq.ft)// for non-residential critical facility only, others blank
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else
                             {
-                                myValues[bid, 0] = ""; //ToDo: if above is no, then need to enter value building by building
+                                myValues[row, 0] = ""; //ToDo: if above is no, then need to enter value building by building
                                 if (Buildings[bid].UseDefaultOneTimeDisplacementCost == EUseDefaultOneTimeDisplacementCost.No)
                                 {
-                                    myValues[bid, 0] = "500.0";
+                                    myValues[row, 0] = "500.0";
                                 }
                                 else
                                 {
-                                    myValues[bid, 0] = "";
+                                    myValues[row, 0] = "";
                                 }
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 45: //Use default lodging per diem, for residential building
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultLodgingPerDiem.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultLodgingPerDiem.Yes);
                                 Buildings[bid].UseDefaultLodgingPerDiem = EUseDefaultLodgingPerDiem.Yes;
                             }
                             else
                             {
+                                myValues[row, 0] = "";
                                 Buildings[bid].UseDefaultLodgingPerDiem = EUseDefaultLodgingPerDiem.NA;
-                                myValues[bid, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 46: //Current federal lodging per diem ($/night), // leave blank if above is Yes 
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 if (Buildings[bid].UseDefaultLodgingPerDiem == EUseDefaultLodgingPerDiem.No)
                                 {
-                                    myValues[bid, 0] = "70.0";
+                                    myValues[row, 0] = "70.0";
                                 }
                                 else
                                 {
-                                    myValues[bid, 0] = "";
+                                    myValues[row, 0] = "";
                                 }
                             }
                             else
                             {
-                                myValues[bid, 0] = ""; //ToDo: if above is no, then need to enter value building by building
+                                myValues[row, 0] = ""; //ToDo: if above is no, then need to enter value building by building
                             }
+                            row++;
                         }
                         //FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 47: //this column is left empty in the FEMA template
                         break;
                     case 48: //Use default Meals per diem (yes/no)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultMealsPerDiem.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultMealsPerDiem.Yes);
                                 Buildings[bid].UseDefaultMealsPerDiem = EUseDefaultMealsPerDiem.Yes;
                             }
                             else
                             {
+                                myValues[row, 0] = "";
                                 Buildings[bid].UseDefaultMealsPerDiem = EUseDefaultMealsPerDiem.NA;
-                                myValues[bid, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 49: //Current federal Meals per diem ($/day)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             if (Buildings[bid].UseDefaultMealsPerDiem == EUseDefaultMealsPerDiem.Yes)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].UseDefaultMealsPerDiem == EUseDefaultMealsPerDiem.No)
                             {
-                                myValues[bid, 0] = "25.0";
+                                myValues[row, 0] = "25.0";
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 50: //# of Building residents
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "4"; //typical family of 4, do dogs and cats count
+                                myValues[row, 0] = "4"; //typical family of 4, do dogs and cats count
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 51: //# of volunteers required, for all structure types
                         //assume 1 volunteer per building, BCA Tool guide might have more info
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
                             //ot = Buildings[bid].OccupancyType;
-                            myValues[bid, 0] = ""; 
+                            myValues[row, 0] = "";
                             Buildings[bid].NumberOfVolunteersRequired = 0;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 52: //# of days lodging for volunteers, if above is greater than 0
                         //assume 3 days lodging per volunteer per building, BCA Tool guide might have more info
+                        row = 0;
                         foreach (int bid in building_keys)
                         {
                             //ot = Buildings[bid].OccupancyType;
-                            if (Buildings[bid].NumberOfVolunteersRequired> 0)
+                            if (Buildings[bid].NumberOfVolunteersRequired > 0)
                             {
-                                myValues[bid, 0] = "3"; 
+                                myValues[row, 0] = "3";
                                 Buildings[bid].NumberOfDaysLodgingForVolunteers = 3;
                             }
                             else
                             {
-                                myValues[bid, 0] = ""; 
+                                myValues[row, 0] = "";
                                 Buildings[bid].NumberOfDaysLodgingForVolunteers = 0;
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 53: //Use default per-person cost of lodging, (yes/no)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for residential building
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
                                 Buildings[bid].UseDefaultPerPersonCostofLodging = EUseDefaultPerPersonCostofLodging.Yes;
                             }
                             else
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
                                 Buildings[bid].UseDefaultPerPersonCostofLodging = EUseDefaultPerPersonCostofLodging.Yes;
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 54: // per-person cost of lodging for a volunteer, ($)
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             // blank if above is Yes
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
                                 if (Buildings[bid].UseDefaultPerPersonCostofLodging == EUseDefaultPerPersonCostofLodging.No)
                                 {
-                                    myValues[bid, 0] = "1000.0";
-                                } 
+                                    myValues[row, 0] = "1000.0";
+                                }
                                 else
                                 {
-                                    myValues[bid, 0] = "";
+                                    myValues[row, 0] = "";
                                 }
                             }
                             else
                             {
-                                myValues[bid, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
+                                myValues[row, 0] = nameof(EUseDefaultPerPersonCostofLodging.Yes);
                                 if (Buildings[bid].UseDefaultPerPersonCostofLodging == EUseDefaultPerPersonCostofLodging.No)
                                 {
-                                    myValues[bid, 0] = "1000.0";
+                                    myValues[row, 0] = "1000.0";
                                 }
                                 else
                                 {
-                                    myValues[bid, 0] = "";
+                                    myValues[row, 0] = "";
                                 }
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 55: // # of full time workers in the home, for residential buildings only
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for residential buildings // others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
                             {
-                                myValues[bid, 0] = "2"; // two working parents
+                                myValues[row, 0] = "2"; // two working parents
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 56: // if ecosystem services benefit applicable for the project, determine area to be acquired is in Acre or sqft
                         bool needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             ot = Buildings[bid].OccupancyType;
-                            //myValues[bid, 0] = nameof(EMeasureAcquiredAreaInAcresPerEcosystemServices.No);
-                            myValues[bid, 0] = "";
+                            //myValues[row, 0] = nameof(EMeasureAcquiredAreaInAcresPerEcosystemServices.No);
+                            myValues[row, 0] = "";
                             Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices = EMeasureAcquiredAreaInAcresPerEcosystemServices.NA;
-                            if (!string.IsNullOrWhiteSpace (myValues[bid, 0])) 
+                            if (!string.IsNullOrWhiteSpace(myValues[row, 0]))
                             {
                                 needEnterData = true;
                                 Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices = EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes;
@@ -1208,25 +1356,27 @@ namespace MaskRaster
                         break;
                     case 57: // if ecosystem services benefit applicable for the project, determine area to be acquired sq.ft or acre 
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             ot = Buildings[bid].OccupancyType;
-                            //myValues[bid, 0] = nameof(EMeasureAcquiredAreaInAcresPerEcosystemServices.No);
+                            //myValues[row, 0] = nameof(EMeasureAcquiredAreaInAcresPerEcosystemServices.No);
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes)
                             {
-                                myValues[bid, 0] = ""; //enter acres
+                                myValues[row, 0] = ""; //enter acres
                                 needEnterData = true;
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; //enter sq.ft
+                                myValues[row, 0] = ""; //enter sq.ft
                                 needEnterData = true;
                             }
+                            row++;
                         }
                         if (needEnterData)
                         {
@@ -1235,23 +1385,25 @@ namespace MaskRaster
                         break;
                     case 58: // if ecosystem services benefit applicable for the project, determine % Green open space
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = "50"; //50% green open space
+                                myValues[row, 0] = "50"; //50% green open space
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         if (needEnterData)
                         {
@@ -1260,22 +1412,23 @@ namespace MaskRaster
                         break;
                     case 59: // if ecosystem services benefit applicable for the project, determine % Rural Green open space
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = "30"; //30% rural green open space
+                                myValues[row, 0] = "30"; //30% rural green open space
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                         }
                         if (needEnterData)
@@ -1285,22 +1438,23 @@ namespace MaskRaster
                         break;
                     case 60: // if ecosystem services benefit applicable for the project, determine % riparian
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = "10"; //10% riparian
+                                myValues[row, 0] = "10"; //10% riparian
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                         }
                         if (needEnterData)
@@ -1310,22 +1464,23 @@ namespace MaskRaster
                         break;
                     case 61: // if ecosystem services benefit applicable for the project, determine % Coastal Wetlands
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; // no coastal wetlands
+                                myValues[row, 0] = ""; // no coastal wetlands
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                         }
                         if (needEnterData)
@@ -1335,23 +1490,25 @@ namespace MaskRaster
                         break;
                     case 62: // if ecosystem services benefit applicable for the project, determine % inland Wetlands
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; // no inland wetlands
+                                myValues[row, 0] = ""; // no inland wetlands
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         if (needEnterData)
                         {
@@ -1360,23 +1517,25 @@ namespace MaskRaster
                         break;
                     case 63: // if ecosystem services benefit applicable for the project, determine % Forest
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; // no forest
+                                myValues[row, 0] = ""; // no forest
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         if (needEnterData)
                         {
@@ -1385,23 +1544,25 @@ namespace MaskRaster
                         break;
                     case 64: // if ecosystem services benefit applicable for the project, determine % Coral Reefs
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; // no Coral Reefs
+                                myValues[row, 0] = ""; // no Coral Reefs
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         if (needEnterData)
                         {
@@ -1410,22 +1571,23 @@ namespace MaskRaster
                         break;
                     case 65: // if ecosystem services benefit applicable for the project, determine % Shellfish Reefs
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; // no Shellfish Reefs
+                                myValues[row, 0] = ""; // no Shellfish Reefs
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                         }
                         if (needEnterData)
@@ -1435,23 +1597,25 @@ namespace MaskRaster
                         break;
                     case 66: // if ecosystem services benefit applicable for the project, determine %  Beaches and Dunes
                         needEnterData = false;
+                        row = 0;
                         foreach (int bid in building_keys)
-                        {   
+                        {
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
                             else if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.Yes ||
                                      Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.No)
                             {
-                                myValues[bid, 0] = ""; // no Beaches and Dunes
+                                myValues[row, 0] = ""; // no Beaches and Dunes
                                 needEnterData = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                             }
+                            row++;
                         }
                         if (needEnterData)
                         {
@@ -1472,6 +1636,11 @@ namespace MaskRaster
             SetupRiverineFloodTemplateFloodBeforeAfterMitigation(worksheet, building_keys, selectedAlternative.Name);
             pb.Value++;
 
+            //Critical Facility Info Setup
+            worksheet = BCAWorkbook.Worksheets[BCA_Worksheet4] as Worksheet;
+            SetupRiverineFloodTemplateCriticalFacilityInfo(worksheet, building_keys);
+            pb.Value++;
+
             //BCAWorkbook.Close();
             //App.Quit();
         }
@@ -1482,6 +1651,7 @@ namespace MaskRaster
 
             //Flood Before and After Mitigation keys are the same, so could use either one for iteration below.
             int column = 0;
+            int row;
             foreach (var key in Dict_FloodBeforeMitigation.Keys)
             {
                 int.TryParse(key.Substring(0, key.LastIndexOf("_")), out column);
@@ -1490,18 +1660,22 @@ namespace MaskRaster
                 switch (column)
                 {
                     case 1: //id
+                        row = 0;
                         for (int bid = 0; bid < building_keys.Length; bid++)
                         {
-                            myValues[bid, 0] = building_keys[bid].ToString();
+                            myValues[row, 0] = building_keys[bid].ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 2: //Use default recurrent intervals? (Yes/No) 10- 50- 100- 500-year events
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             //var ot = Buildings[bid].OccupancyType;
-                            myValues[bid, 0] = nameof(EUseDefaultRecurrenceIntervals.Yes);
+                            myValues[row, 0] = nameof(EUseDefaultRecurrenceIntervals.Yes);
                             Buildings[bid].UseDefaultRecurrenceIntervals = EUseDefaultRecurrenceIntervals.Yes;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
@@ -1509,19 +1683,21 @@ namespace MaskRaster
                         bool needDataEntry = false;
                         int years1 = 10; // can change to some other year
                         int years1Default = 10;
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
                             {
-                                myValues[bid, 0] = years1.ToString();
+                                myValues[row, 0] = years1.ToString();
                                 Buildings[bid].RecurrenceIntervalYears1 = years1;
                                 needDataEntry = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 Buildings[bid].RecurrenceIntervalYears1 = years1Default;
                             }
+                            row++;
                         }
                         if (needDataEntry)
                         {
@@ -1530,17 +1706,21 @@ namespace MaskRaster
                         break;
                     case 4: //Water Surface Elevation 1 in feet
                         string alt_key = "";
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears1 + "Yr_" + alt_scenario_name;
-                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 5: //Discharge (cfs) 1
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
-                            myValues[bid, 0] = "0.0";
+                            myValues[row, 0] = "0.0";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
@@ -1548,19 +1728,21 @@ namespace MaskRaster
                         int years2 = 50; //change to some other years
                         int years2Default = 50;
                         needDataEntry = false;
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
                             {
-                                myValues[bid, 0] = years2.ToString();
+                                myValues[row, 0] = years2.ToString();
                                 Buildings[bid].RecurrenceIntervalYears2 = years2;
                                 needDataEntry = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 Buildings[bid].RecurrenceIntervalYears2 = years2Default;
                             }
+                            row++;
                         }
                         if (needDataEntry)
                         {
@@ -1568,17 +1750,21 @@ namespace MaskRaster
                         }
                         break;
                     case 7: //Water Surface Elevation 2 in feet
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears2 + "Yr_" + alt_scenario_name;
-                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 8: //Discharge (cfs) 2
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
-                            myValues[bid, 0] = "0.0";
+                            myValues[row, 0] = "0.0";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
@@ -1586,19 +1772,21 @@ namespace MaskRaster
                         int years3 = 100; //change to some other years
                         int years3Default = 100;
                         needDataEntry = false;
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
                             {
-                                myValues[bid, 0] = years3.ToString();
+                                myValues[row, 0] = years3.ToString();
                                 Buildings[bid].RecurrenceIntervalYears3 = years3;
                                 needDataEntry = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 Buildings[bid].RecurrenceIntervalYears3 = years3Default;
                             }
+                            row++;
                         }
                         if (needDataEntry)
                         {
@@ -1607,18 +1795,22 @@ namespace MaskRaster
                         break;
                     case 10: //Water Surface Elevation 3 in feet
                         alt_key = "";
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears3 + "Yr_" + alt_scenario_name;
-                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 11: //Discharge (cfs) 3
                         alt_key = "";
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
-                            myValues[bid, 0] = "0.0";
+                            myValues[row, 0] = "0.0";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
@@ -1626,19 +1818,21 @@ namespace MaskRaster
                         int years4 = 500; //change to some other years
                         int years4Default = 500;
                         needDataEntry = false;
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
                             {
-                                myValues[bid, 0] = years4.ToString();
+                                myValues[row, 0] = years4.ToString();
                                 Buildings[bid].RecurrenceIntervalYears4 = years4;
                                 needDataEntry = true;
                             }
                             else
                             {
-                                myValues[bid, 0] = "";
+                                myValues[row, 0] = "";
                                 Buildings[bid].RecurrenceIntervalYears4 = years4Default;
                             }
+                            row++;
                         }
                         if (needDataEntry)
                         {
@@ -1647,24 +1841,338 @@ namespace MaskRaster
                         break;
                     case 13: //Water Surface Elevation 4 in feet
                         alt_key = "";
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears4 + "Yr_" + alt_scenario_name;
-                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 14: //Discharge (cfs) 4
                         alt_key = "";
+                        row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
-                            myValues[bid, 0] = "0.0";
+                            myValues[row, 0] = "0.0";
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                 }
             }
         }
+
+        public static void SetupRiverineFloodTemplateCriticalFacilityInfo(Worksheet worksheet, int[] building_keys)
+        {
+            int column = 0;
+            //get a list of only the critical buildings
+            List<Building> critical_buildings = new List<Building>();
+            foreach (int bid in building_keys)
+            {   //Only required if critical facility structure; others skip
+                var ot = Buildings[bid].OccupancyType;
+                if (ot.StartsWith("Fire"))
+                {
+                    critical_buildings.Add(Buildings[bid]);
+                }
+                else if (ot.StartsWith("Police"))
+                {
+                    critical_buildings.Add(Buildings[bid]);
+                }
+                else if (ot.StartsWith("Heal"))
+                {
+                    critical_buildings.Add(Buildings[bid]);
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+            foreach (var key in Dict_CriticalFacilityInfo.Keys)
+            {
+                int.TryParse(key.Substring(0, key.LastIndexOf("_")), out column);
+                string[,] myValues = new string[critical_buildings.Count, 0];
+
+                switch (column)
+                {
+                    case 1: //id
+                        int row = 0;
+                        foreach (Building b in critical_buildings)
+                        {
+                            myValues[row, 0] = b.BID.ToString();
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 2: //Critical Facility Type, enum
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = (nameof(ECriticalFacilityType.Fire_Station)).Replace("_", " ");
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = (nameof(ECriticalFacilityType.Police_Station)).Replace("_", " ");
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = nameof(ECriticalFacilityType.Hospital);
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 3: //# of people served (Fire Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "2000"; //ToDo: need to determine
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 4: //Type of area served (Fire Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = nameof(EFireStationServiceAreaType.Urban); //ToDo: need to determine
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 5: //Distance between alternate station in miles (Fire Station)
+                        row = 0;
+                        int distance = 15; //miles, ToDo: need to determine
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = distance.ToString();
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 6: //Does fire station provides EMS, Yes/No (Fire Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = nameof(EFireStationProvidesEMS.No); //todo: need to determine
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row ++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 7: //Distance between EMS station, in miles (Fire Station)
+                        row = 0;
+                        distance = 15; //ToDo: need to determine
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = distance.ToString();
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 8: //# of people served (Hospital)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "2500";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 9: //Distance between alternate hospital, in miles (Hospital)
+                        row = 0;
+                        distance = 25; //ToDo: need to be determined
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = distance.ToString();
+                            }
+                            row ++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 10: //# of people served by alternate hospital (Hospital)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "2500"; //ToDo: need to be determined
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 11: //Type of area served (Police Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = nameof(EPoliceStationServiceAreaType.Urban); //ToDo: need to be determined
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 12: //# of people served (Police Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "2500"; //ToDo: need to be determined
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 13: //# of police officers working at station (Police Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "15"; //ToDo: need to be determined
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 14: //# of police officers working at station if shutdown by disaster (Police Station)
+                        row = 0;
+                        foreach (Building b in critical_buildings)
+                        {   //Only required if critical facility structure; others skip
+                            if (b.OccupancyType.StartsWith("Fire"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            else if (b.OccupancyType.StartsWith("Police"))
+                            {
+                                myValues[row, 0] = "5"; //ToDo: need to be determined
+                            }
+                            else if (b.OccupancyType.StartsWith("Heal"))
+                            {
+                                myValues[row, 0] = "";
+                            }
+                            row++;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                }
+            }
+        }
+
 
         public static void FillColumnRiverineFlood(Worksheet worksheet, int column, string[,] data)
         {
