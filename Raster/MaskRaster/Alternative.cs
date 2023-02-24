@@ -48,16 +48,47 @@ namespace MaskRaster
             */
         }
 
-        public string fullpath(GridDataType datatype)
+        public bool isPathSet(GridDataType datatype)
         {
             switch(datatype)
             {
                 case GridDataType.WSEMAX:
-                    return System.IO.Path.Combine(basefolder, PathWSEMAX);
+                    if (string.IsNullOrEmpty(PathWSEMAX))
+                        return false;
+                    break;
                 case GridDataType.DEPTHMAX:
-                    return System.IO.Path.Combine(basefolder, PathDEPTHMAX);
+                    if (string.IsNullOrEmpty(PathDEPTHMAX))
+                        return false;
+                    break;
                 case GridDataType.TERRAIN:
-                    return System.IO.Path.Combine(basefolder, PathTERRAIN);
+                    if (string.IsNullOrEmpty(PathTERRAIN))
+                        return false;
+                    break;
+            }
+            return true;
+        }
+
+        public string fullpath(GridDataType datatype)
+        {
+            string fp = "";
+            switch(datatype)
+            {
+                case GridDataType.WSEMAX:
+                    if (!string.IsNullOrEmpty(PathWSEMAX))
+                        fp = System.IO.Path.Combine(basefolder, PathWSEMAX);
+                    break;
+                case GridDataType.DEPTHMAX:
+                    if (!string.IsNullOrEmpty(PathDEPTHMAX))
+                        fp = System.IO.Path.Combine(basefolder, PathDEPTHMAX);
+                    break;
+                case GridDataType.TERRAIN:
+                    if (!string.IsNullOrEmpty(PathTERRAIN))
+                        fp = System.IO.Path.Combine(basefolder, PathTERRAIN);
+                    break;
+            }
+            if (System.IO.File.Exists(fp))
+            {
+                return fp;
             }
             return "";
         }

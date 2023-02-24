@@ -78,7 +78,7 @@ namespace MaskRaster
                     datatype = GridDataType.TERRAIN;
                 }
 
-                if (layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
+                if (alt.isPathSet(datatype) && layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
                 {
                     AddLayer(alt.fullpath(datatype));
                     numLayersAdded++;

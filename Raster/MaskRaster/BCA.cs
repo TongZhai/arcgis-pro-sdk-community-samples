@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Office.Interop.Excel;
 using System.Windows.Controls;
 using System.Runtime.CompilerServices;
+using ArcGIS.Desktop.Framework.Dialogs;
 
 namespace MaskRaster
 {
@@ -22,17 +23,17 @@ namespace MaskRaster
 
         public static Dictionary<int, Building> Buildings = new Dictionary<int, Building>();
 
-        public System.Data.DataTable Tab_RiverineFlood;
-        public System.Data.DataTable Tab_FloodBeforeMitigation;
-        public System.Data.DataTable Tab_FloodAfterMitigation;
-        public System.Data.DataTable Tab_CriticalFacilityInfo;
+        public static System.Data.DataTable Tab_RiverineFlood;
+        public static System.Data.DataTable Tab_FloodBeforeMitigation;
+        public static System.Data.DataTable Tab_FloodAfterMitigation;
+        public static System.Data.DataTable Tab_CriticalFacilityInfo;
 
         public static Dictionary<string, string> Dict_RiverineFlood;
         public static Dictionary<string, string> Dict_FloodBeforeMitigation;
         public static Dictionary<string, string> Dict_FloodAfterMitigation;
         public static Dictionary<string, string> Dict_CriticalFacilityInfo;
 
-        public void Setup()
+        public static void Setup()
         {
             Tab_RiverineFlood = new System.Data.DataTable("Riverine Flood");
             Tab_RiverineFlood.Columns.Add("1_A", System.Type.GetType("System.String"));
@@ -174,7 +175,9 @@ namespace MaskRaster
             Tab_FloodBeforeMitigation.Columns.Add("11_K", typeof(string));
             Tab_FloodBeforeMitigation.Columns.Add("12_L", typeof(string));
             Tab_FloodBeforeMitigation.Columns.Add("13_M", typeof(string));
+            Tab_FloodBeforeMitigation.Columns.Add("14_N", typeof(string));
 
+            Dict_FloodBeforeMitigation = new Dictionary<string, string>();
             Dict_FloodBeforeMitigation.Add("1_A", "Identifier");
             Dict_FloodBeforeMitigation.Add("2_B", "Use Default Recurrence Intervals?");
             Dict_FloodBeforeMitigation.Add("3_C", "Recurrence Interval (years) 1");
@@ -188,6 +191,7 @@ namespace MaskRaster
             Dict_FloodBeforeMitigation.Add("11_K", "Discharge (cfs) 3");
             Dict_FloodBeforeMitigation.Add("12_L", "Recurrence Interval (years) 4");
             Dict_FloodBeforeMitigation.Add("13_M", "Water Surface Elevation (ft) 4");
+            Dict_FloodBeforeMitigation.Add("14_N", "Discharge (cfs) 4");
 
             Tab_FloodAfterMitigation = new System.Data.DataTable("Flood After Mitigation");
             Tab_FloodAfterMitigation.Columns.Add("1_A", typeof(string));
@@ -203,7 +207,9 @@ namespace MaskRaster
             Tab_FloodAfterMitigation.Columns.Add("11_K", typeof(string));
             Tab_FloodAfterMitigation.Columns.Add("12_L", typeof(string));
             Tab_FloodAfterMitigation.Columns.Add("13_M", typeof(string));
+            Tab_FloodAfterMitigation.Columns.Add("14_N", typeof(string));
 
+            Dict_FloodAfterMitigation = new Dictionary<string, string>();
             Dict_FloodAfterMitigation.Add("1_A", "Identifier");
             Dict_FloodAfterMitigation.Add("2_B", "Use Default Recurrence Intervals?");
             Dict_FloodAfterMitigation.Add("3_C", "Recurrence Interval (years) 1");
@@ -217,6 +223,7 @@ namespace MaskRaster
             Dict_FloodAfterMitigation.Add("11_K", "Discharge (cfs) 3");
             Dict_FloodAfterMitigation.Add("12_L", "Recurrence Interval (years) 4");
             Dict_FloodAfterMitigation.Add("13_M", "Water Surface Elevation (ft) 4");
+            Dict_FloodAfterMitigation.Add("14_N", "Discharge (cfs) 4");
 
             Tab_CriticalFacilityInfo = new System.Data.DataTable("Critical Facility Info");
             Tab_CriticalFacilityInfo.Columns.Add("1_A", typeof(string));
@@ -234,6 +241,7 @@ namespace MaskRaster
             Tab_CriticalFacilityInfo.Columns.Add("13_M", typeof(string));
             Tab_CriticalFacilityInfo.Columns.Add("14_N", typeof(string));
 
+            Dict_CriticalFacilityInfo = new Dictionary<string, string>();
             Dict_CriticalFacilityInfo.Add("1_A", "Identifier");
             Dict_CriticalFacilityInfo.Add("2_B", "Critical Facility Type");
             Dict_CriticalFacilityInfo.Add("3_C", "Number of people served (Fire Station)");
@@ -258,6 +266,7 @@ namespace MaskRaster
                 App = new Application();
                 App.Visible = true;
                 BCAWorkbook = App.Workbooks.Open(path);
+                Setup();
             }
             catch
             {
@@ -325,9 +334,11 @@ namespace MaskRaster
                 switch (column)
                 {
                     case 1: //id
+                        row = 0;
                         for (int bid = 0; bid < building_keys.Length; bid++)
                         {
-                            myValues[bid, 0] = building_keys[bid].ToString();
+                            myValues[row, 0] = building_keys[bid].ToString();
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         /*
@@ -1655,7 +1666,7 @@ namespace MaskRaster
             foreach (var key in Dict_FloodBeforeMitigation.Keys)
             {
                 int.TryParse(key.Substring(0, key.LastIndexOf("_")), out column);
-                string[,] myValues = new string[building_keys.Length, 0];
+                string[,] myValues = new string[building_keys.Length, 1];
 
                 switch (column)
                 {
@@ -1707,13 +1718,33 @@ namespace MaskRaster
                     case 4: //Water Surface Elevation 1 in feet
                         string alt_key = "";
                         row = 0;
+                        bool datacomplete = true;
+                        double elev = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears1 + "Yr_" + alt_scenario_name;
-                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            if (!Buildings[bid].WSEmax.ContainsKey(alt_key))
+                            {
+                                MessageBox.Show($"There is no result for {alt_key}");
+                                datacomplete = false;
+                                break;
+                            }
+                            //if a WSEmax for an alternative is -9999, then just use the terrain elevation, ToDo: is this right by BCA?
+                            elev = Buildings[bid].WSEmax[alt_key];
+                            if (elev > 0)
+                            {
+                                myValues[row, 0] = elev.ToString();
+                            }
+                            else
+                            {
+                                myValues[row, 0] = (Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()]).ToString();
+                            }
                             row++;
                         }
-                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        if (datacomplete)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
                         break;
                     case 5: //Discharge (cfs) 1
                         row = 0;
@@ -1751,13 +1782,32 @@ namespace MaskRaster
                         break;
                     case 7: //Water Surface Elevation 2 in feet
                         row = 0;
+                        datacomplete = true;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears2 + "Yr_" + alt_scenario_name;
-                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            if (!Buildings[bid].WSEmax.ContainsKey(alt_key))
+                            {
+                                MessageBox.Show($"There is no result for {alt_key}");
+                                datacomplete = false;
+                                break;
+                            }
+                            //if a WSEmax for an alternative is -9999, then just use the terrain elevation, ToDo: is this right by BCA?
+                            elev = Buildings[bid].WSEmax[alt_key];
+                            if (elev > 0)
+                            {
+                                myValues[row, 0] = elev.ToString();
+                            }
+                            else
+                            {
+                                myValues[row, 0] = (Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()]).ToString();
+                            }
                             row++;
                         }
-                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        if (datacomplete)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
                         break;
                     case 8: //Discharge (cfs) 2
                         row = 0;
@@ -1795,14 +1845,33 @@ namespace MaskRaster
                         break;
                     case 10: //Water Surface Elevation 3 in feet
                         alt_key = "";
+                        datacomplete= true;
                         row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears3 + "Yr_" + alt_scenario_name;
-                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            if (!Buildings[bid].WSEmax.ContainsKey(alt_key))
+                            {
+                                MessageBox.Show($"There is no result for {alt_key}");
+                                datacomplete = false;
+                                break;
+                            }
+                            //if a WSEmax for an alternative is -9999, then just use the terrain elevation, ToDo: is this right by BCA?
+                            elev = Buildings[bid].WSEmax[alt_key];
+                            if (elev > 0)
+                            {
+                                myValues[row, 0] = elev.ToString();
+                            }
+                            else
+                            {
+                                myValues[row, 0] = (Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()]).ToString();
+                            }
                             row++;
                         }
-                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        if (datacomplete)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
                         break;
                     case 11: //Discharge (cfs) 3
                         alt_key = "";
@@ -1842,13 +1911,32 @@ namespace MaskRaster
                     case 13: //Water Surface Elevation 4 in feet
                         alt_key = "";
                         row = 0;
+                        datacomplete = true;
                         foreach (int bid in building_keys)
                         {   // for all structures
                             alt_key = Buildings[bid].RecurrenceIntervalYears4 + "Yr_" + alt_scenario_name;
-                            myValues[row, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                            if (!Buildings[bid].WSEmax.ContainsKey(alt_key))
+                            {
+                                MessageBox.Show($"There is no result for {alt_key}");
+                                datacomplete = false;
+                                break;
+                            }
+                            //if a WSEmax for an alternative is -9999, then just use the terrain elevation, ToDo: is this right by BCA?
+                            elev = Buildings[bid].WSEmax[alt_key];
+                            if (elev > 0)
+                            {
+                                myValues[row, 0] = elev.ToString();
+                            }
+                            else
+                            {
+                                myValues[row, 0] = (Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()]).ToString();
+                            }
                             row++;
                         }
-                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        if (datacomplete)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
                         break;
                     case 14: //Discharge (cfs) 4
                         alt_key = "";
@@ -1893,7 +1981,7 @@ namespace MaskRaster
             foreach (var key in Dict_CriticalFacilityInfo.Keys)
             {
                 int.TryParse(key.Substring(0, key.LastIndexOf("_")), out column);
-                string[,] myValues = new string[critical_buildings.Count, 0];
+                string[,] myValues = new string[critical_buildings.Count, 1];
 
                 switch (column)
                 {
