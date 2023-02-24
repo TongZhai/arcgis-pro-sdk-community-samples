@@ -8,7 +8,7 @@ namespace MaskRaster
 {
     public enum EStructureType
     {
-        Residential_Building, 
+        Residential_Building,
         Non_Residential_Building,  //Non-Residential Building
         Critical_Facility_Building
     }
@@ -37,116 +37,118 @@ namespace MaskRaster
 
     public enum EMitigationActionType
     {
-        Acquisition, 
-        Elevation, 
-        Floodproofing_Measures, 
-        Drainage_Improvement, 
-        Floodplain_and_Stream_Restoration, 
+        Acquisition,
+        Elevation,
+        Floodproofing_Measures,
+        Drainage_Improvement,
+        Floodplain_and_Stream_Restoration,
         Floodwater_Diversion_and_Storage
     }
 
     public enum EUseDefaultYearsMaintenance
     {
+        NA,
         Yes,
         No
     }
 
-    public enum EOutside100YearFloodAreaNonResidentialCriticalFacility
+    public enum EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility
     {
+        NA,
         Yes,
         No
     }
 
     public enum EBuildingHasBasementResidential
     {
+        NA,
         Yes,
         No
     }
 
     public enum EBuildingIsEngineeredNonResidentialCriticalFacility
     {
+        NA,
         Yes,
         No,
     }
 
     public enum EBuildingHasActiveNFIPPolicy
     {
-        Yes,
-        No,
+        NA, Yes, No,
     }
 
     public enum EUseDefaultBuildingReplacementValue
     {
-        Yes, No,
+        NA, Yes, No,
     }
 
     public enum EUseDefaultDemolitionThreshold
     {
-        Yes, No,
+        NA, Yes, No,
     }
 
     public enum EUseDefaultBuildingContentsValue
     {
-        Yes, No,
+        NA, Yes, No,
     }
 
     public enum EUtilitiesAreElevatedResidential
     {
-        Yes,
-        No,
+        NA, Yes, No,
     }
 
     public enum EUseDefaultMonthlyCostOfTemporarySpace
     {
+        NA,
         Yes,
         No,
     }
 
     public enum EUseDefaultOneTimeDisplacementCost
     {
-        Yes, No,
+        NA, Yes, No,
     }
 
     public enum EUseDefaultLodgingPerDiem
     {
+        NA,
         Yes,
         No,
     }
 
     public enum EUseDefaultMealsPerDiem
     {
+        NA,
         Yes,
         No,
     }
 
     public enum EUseDefaultPerPersonCostofLodging
     {
-        Yes,
-        No,
+        NA, Yes, No,
     }
 
     public enum EMeasureAcquiredAreaInAcresPerEcosystemServices
     {
-        Yes,
-        No,
+        NA, Yes, No,
     }
 
     public enum EUseDefaultRecurrenceIntervals
     {
-        Yes, No,
+        NA, Yes, No,
     }
 
     public enum EFireStationProvidesEMS
     {
-        Yes,
-        No,
+        NA, Yes, No,
     }
 
     public enum EBuildingTypeResidential
     {
-        One_Story, 
-        Two_or_More_Stories, 
-        Split_Level, 
+        One_Story,
+        Two_or_More_Stories,
+        Split_Level,
         Manufactured_Home
     }
 
@@ -173,6 +175,24 @@ namespace MaskRaster
         Warehouse_Refrig, //Warehous-Refrig
     }
 
+    public enum EBuildingTypeBrookings
+    {
+        Apartment,
+        Commercial,
+        Detached,
+        Fire,
+        Health,
+        Industrial,
+        Library,
+        Mobile,
+        Municipal,
+        Police,
+        Recreation,
+        Residential,
+        Runway,
+        School,
+    }
+
     public enum EBuildingUseNonResidential
     {
         COM1, COM2, COM3, COM4, COM5, COM6, COM7, COM8, COM9, COM10,
@@ -183,10 +203,12 @@ namespace MaskRaster
         EDU1, EDU2
     }
 
-
-    internal class Building
+    public class Building
     {
         /* shared attributes of buildings */
+
+        public static List<Alternative> Alternatives;
+
         public static string City = "Brookings";
         public static string ZipCode = "57006";
         public static string County = "Brookings";
@@ -217,116 +239,140 @@ namespace MaskRaster
             { EBuildingUseNonResidential.EDU2, "EDU2: Education - Colleges/Universities" },
         };
 
-        public static List<string> DamageCurveBuildingTypes = new List<string>()
+        public static Dictionary<int, string> DictDamageCurveBuildingTypes = new Dictionary<int, string>()
         {
-            "Apartment",
-            "Convenience Store",
-            "Correctional Facility",
-            "Fast Food",
-            "FEMA FIA",
-            "FEMA FIA, 1-Story, No Basement",
-            "FEMA FIA, 1-Story, With Basement",
-            "FEMA FIA, 2-Story, No Basement",
-            "FEMA FIA, 2-Story, With Basement",
-            "FEMA FIA, Split Level, No Basement",
-            "FEMA FIA, Split Level, With Basement",
-            "Fire Station",
-            "Grocery",
-            "Hospital",
-            "Hotel",
-            "Industrial Light",
-            "Medical Office",
-            "Non-Fast Food",
-            "Office One-Story",
-            "Police Station",
-            "Protective Services",
-            "Recreation",
-            "Religious Facilities",
-            "Retail-Clothing",
-            "Retail-Electronics",
-            "Retail-Furniture",
-            "Schools",
-            "Service Station",
-            "USACE - Chicago: Apartment Unit Grade",
-            "USACE - Chicago: Apartment Unit Sub-Grade",
-            "USACE - Chicago: Mobile Home",
-            "USACE - Chicago: one story, no basement",
-            "USACE - Chicago: one story, w/ basement",
-            "USACE - Chicago: split level, no basement",
-            "USACE - Chicago: split level, w/ basement",
-            "USACE - Chicago: two story, no basement",
-            "USACE - Chicago: two story, w/ basement",
-            "USACE - Galveston: Airport",
-            "USACE - Galveston: Apartment, living area on one floor",
-            "USACE - Galveston: City Hall",
-            "USACE - Galveston: Condominium, living area on multiple floors",
-            "USACE - Galveston: Doctor's Office",
-            "USACE - Galveston: Fire Station",
-            "USACE - Galveston: Food Warehouse",
-            "USACE - Galveston: Hospital",
-            "USACE - Galveston: Hotel",
-            "USACE - Galveston: Library",
-            "USACE - Galveston: Mobile Home",
-            "USACE - Galveston: Motel Unit",
-            "USACE - Galveston: Nursing Home",
-            "USACE - Galveston: one & 1/2 story, no basement",
-            "USACE - Galveston: one story, no basement",
-            "USACE - Galveston: Police Station",
-            "USACE - Galveston: Post Office",
-            "USACE - Galveston: School",
-            "USACE - Galveston: two story, no basement",
-            "USACE - Galveston: Warehouse",
-            "USACE - New Orleans: College, structure, fresh water, short duration",
-            "USACE - New Orleans: College, structure, salt water, long duration",
-            "USACE - New Orleans: Department Store, structure, fresh water, short duration",
-            "USACE - New Orleans: Department Store, structure, salt water, long duration",
-            "USACE - New Orleans: Elementary school, structure, fresh water, short duration",
-            "USACE - New Orleans: Elementary school, structure, salt water, long duration",
-            "USACE - New Orleans: Government facility, structure, fresh water, short duration",
-            "USACE - New Orleans: Government facility, structure, salt water, long duration",
-            "USACE - New Orleans: Large Grocery,  structure, fresh water, short duration",
-            "USACE - New Orleans: Large Grocery, structure, salt water, long duration",
-            "USACE - New Orleans: Medical Office, structure, fresh water, short duration",
-            "USACE - New Orleans: Medical Office, structure, salt water, long duration",
-            "USACE - New Orleans: one story, Pier foundation, structure, fresh water, short duration",
-            "USACE - New Orleans: one story, Pier foundation, structure, salt water, long duration",
-            "USACE - New Orleans: one story, Slab foundation, structure, fresh water, short duration",
-            "USACE - New Orleans: one story, Slab foundation, structure, salt water, long duration",
-            "USACE - New Orleans: two story, Pier foundation, structure, fresh water, short duration",
-            "USACE - New Orleans: two story, Pier foundation, structure, salt water, long duration",
-            "USACE - New Orleans: two story, Slab foundation, structure, fresh water, short duration",
-            "USACE - New Orleans: two story, Slab foundation, structure, salt water, long duration",
-            "USACE - New Orleans: Utility Company, structure, fresh water, short duration",
-            "USACE - New Orleans: Utility Company, structure, salt water, long duration",
-            "USACE - New Orleans: Warehouse, structure, fresh water, short duration",
-            "USACE - New Orleans: Warehouse, structure, salt water, long duration",
-            "USACE - St. Paul: one story",
-            "USACE - St. Paul: two story",
-            "USACE - Wilmington: Mobile Home",
-            "USACE - Wilmington: one & 1/2 story",
-            "USACE - Wilmington: one & 1/2 story w/ 1/2 living area below",
-            "USACE - Wilmington: one & 1/2 story, Pile foundation",
-            "USACE - Wilmington: one story",
-            "USACE - Wilmington: one story w/ 1/2 living area below",
-            "USACE - Wilmington: one story w/ basement",
-            "USACE - Wilmington: one story, Pile foundation",
-            "USACE - Wilmington: split level",
-            "USACE - Wilmington: two story",
-            "USACE - Wilmington: two story w/ 1/2 living area below",
-            "USACE - Wilmington: two story, Pile foundation",
-            "USACE Generic",
-            "Warehouse, Non-Refrig",
-            "Warehouse, Refrig",
+            {1, "Apartment"},
+            {2, "Convenience Store"},
+            {3, "Correctional Facility"},
+            {4, "Fast Food"},
+            {5, "FEMA FIA"},
+            {6, "FEMA FIA, 1-Story, No Basement"},
+            {7, "FEMA FIA, 1-Story, With Basement"},
+            {8, "FEMA FIA, 2-Story, No Basement"},
+            {9, "FEMA FIA, 2-Story, With Basement"},
+            {10, "FEMA FIA, Split Level, No Basement"},
+            {11, "FEMA FIA, Split Level, With Basement"},
+            {12, "Fire Station"},
+            {13, "Grocery"},
+            {14, "Hospital"},
+            {15, "Hotel"},
+            {16, "Industrial Light"},
+            {17, "Medical Office"},
+            {18, "Non-Fast Food"},
+            {19, "Office One-Story"},
+            {20, "Police Station"},
+            {21, "Protective Services"},
+            {22, "Recreation"},
+            {23, "Religious Facilities"},
+            {24, "Retail-Clothing"},
+            {25, "Retail-Electronics"},
+            {26, "Retail-Furniture"},
+            {27, "Schools"},
+            {28, "Service Station"},
+            {29, "USACE - Chicago: Apartment Unit Grade"},
+            {30, "USACE - Chicago: Apartment Unit Sub-Grade"},
+            {31, "USACE - Chicago: Mobile Home"},
+            {32, "USACE - Chicago: one story, no basement"},
+            {33, "USACE - Chicago: one story, w/ basement"},
+            {34, "USACE - Chicago: split level, no basement"},
+            {35, "USACE - Chicago: split level, w/ basement"},
+            {36, "USACE - Chicago: two story, no basement"},
+            {37, "USACE - Chicago: two story, w/ basement"},
+            {38, "USACE - Galveston: Airport"},
+            {39, "USACE - Galveston: Apartment, living area on one floor"},
+            {40, "USACE - Galveston: City Hall"},
+            {41, "USACE - Galveston: Condominium, living area on multiple floors"},
+            {42, "USACE - Galveston: Doctor's Office"},
+            {43, "USACE - Galveston: Fire Station"},
+            {44, "USACE - Galveston: Food Warehouse"},
+            {45, "USACE - Galveston: Hospital"},
+            {46, "USACE - Galveston: Hotel"},
+            {47, "USACE - Galveston: Library"},
+            {48, "USACE - Galveston: Mobile Home"},
+            {49, "USACE - Galveston: Motel Unit"},
+            {50, "USACE - Galveston: Nursing Home"},
+            {51, "USACE - Galveston: one & 1/2 story}, no basement"},
+            {52, "USACE - Galveston: one story, no basement"},
+            {53, "USACE - Galveston: Police Station"},
+            {54, "USACE - Galveston: Post Office"},
+            {55, "USACE - Galveston: School"},
+            {56, "USACE - Galveston: two story, no basement"},
+            {57, "USACE - Galveston: Warehouse"},
+            {58, "USACE - New Orleans: College, structure, fresh water, short duration"},
+            {59, "USACE - New Orleans: College, structure, salt water, long duration"},
+            {60, "USACE - New Orleans: Department Store, structure, fresh water, short duration"},
+            {61, "USACE - New Orleans: Department Store, structure, salt water, long duration"},
+            {62, "USACE - New Orleans: Elementary school, structure, fresh water, short duration"},
+            {63, "USACE - New Orleans: Elementary school, structure, salt water, long duration"},
+            {64, "USACE - New Orleans: Government facility, structure, fresh water, short duration"},
+            {65, "USACE - New Orleans: Government facility, structure, salt water, long duration"},
+            {66, "USACE - New Orleans: Large Grocery,  structure, fresh water, short duration"},
+            {67, "USACE - New Orleans: Large Grocery, structure, salt water, long duration"},
+            {68, "USACE - New Orleans: Medical Office, structure, fresh water, short duration"},
+            {69, "USACE - New Orleans: Medical Office, structure, salt water, long duration"},
+            {70, "USACE - New Orleans: one story, Pier foundation, structure, fresh water, short duration"},
+            {71, "USACE - New Orleans: one story, Pier foundation, structure, salt water, long duration"},
+            {72, "USACE - New Orleans: one story, Slab foundation, structure, fresh water, short duration"},
+            {73, "USACE - New Orleans: one story, Slab foundation, structure, salt water, long duration"},
+            {74, "USACE - New Orleans: two story, Pier foundation, structure, fresh water, short duration"},
+            {75, "USACE - New Orleans: two story, Pier foundation, structure, salt water, long duration"},
+            {76, "USACE - New Orleans: two story, Slab foundation, structure, fresh water, short duration"},
+            {77, "USACE - New Orleans: two story, Slab foundation, structure, salt water, long duration"},
+            {78, "USACE - New Orleans: Utility Company, structure, fresh water, short duration"},
+            {79, "USACE - New Orleans: Utility Company, structure, salt water, long duration"},
+            {80, "USACE - New Orleans: Warehouse, structure, fresh water, short duration"},
+            {81, "USACE - New Orleans: Warehouse, structure, salt water, long duration"},
+            {82, "USACE - St. Paul: one story"},
+            {83, "USACE - St. Paul: two story"},
+            {84, "USACE - Wilmington: Mobile Home"},
+            {85, "USACE - Wilmington: one & 1/2 story"},
+            {86, "USACE - Wilmington: one & 1/2 story w/ 1/2 living area below"},
+            {87, "USACE - Wilmington: one & 1/2 story}, Pile foundation"},
+            {88, "USACE - Wilmington: one story"},
+            {89, "USACE - Wilmington: one story w/ 1/2 living area below"},
+            {90, "USACE - Wilmington: one story w/ basement"},
+            {91, "USACE - Wilmington: one story}, Pile foundation"},
+            {92, "USACE - Wilmington: split level"},
+            {93, "USACE - Wilmington: two story"},
+            {94, "USACE - Wilmington: two story w/ 1/2 living area below"},
+            {95, "USACE - Wilmington: two story, Pile foundation"},
+            {96, "USACE Generic"},
+            {97, "Warehouse, Non-Refrig"},
+            {98, "Warehouse, Refrig"},
+        };
+
+        public static Dictionary<EBuildingTypeBrookings, double> DictBuildingAnnualOperatingBudgetBrookings = new Dictionary<EBuildingTypeBrookings, double>() {
+            { EBuildingTypeBrookings.Apartment, 10000 },
+            { EBuildingTypeBrookings.Commercial, 10000 },
+            { EBuildingTypeBrookings.Detached, 10000 },
+            { EBuildingTypeBrookings.Fire, 10000 },
+            { EBuildingTypeBrookings.Health, 10000 },
+            { EBuildingTypeBrookings.Industrial, 10000 },
+            { EBuildingTypeBrookings.Library, 10000 },
+            { EBuildingTypeBrookings.Mobile, 10000 },
+            { EBuildingTypeBrookings.Municipal, 10000 },
+            { EBuildingTypeBrookings.Police, 10000 },
+            { EBuildingTypeBrookings.Recreation, 10000 },
+            { EBuildingTypeBrookings.Residential, 10000 },
+            { EBuildingTypeBrookings.Runway, 10000 },
+            { EBuildingTypeBrookings.School, 10000 },
         };
 
         public int BID;
-        public double WSEmax;
-        public double Depthmax;
 
-        public double latitude;
-        public double longitude;
+        public Dictionary<string, double> WSEmax; //alternative_ID -> WSEmax
+        public Dictionary<string, double> Depthmax; //alternative_ID -> Depthmax
 
-        public EOutside100YearFloodAreaNonResidentialCriticalFacility Outside100YearFloodAreaNonResidentialOnly; // Yes/No, for non-residential building only, determine displacement duration
+        //***** read once ****
+        public double? latitude { get; set; }
+        public double? longitude { get; set; }
+        public double? FirstFloorAreaSqFt; // non-residential and critical structure; single story = footprint of building
+        public string OccupancyType { get; set; }
+        public string Address { get; set; }
+        public double? TerrainElevationFt { get; set; }
+        //***** read once ****
+
+        public EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility BuildingOutside100YearFloodAreaNonResidentialOnly; // Yes/No, for non-residential building only, determine displacement duration
         public EStructureType StructureType;
         public EUseDefaultYearsMaintenance UseDefaultYearsMaintenance;
         public EBuildingTypeNonResidential BuildingTypeNonResidential;
@@ -337,7 +383,6 @@ namespace MaskRaster
         public EBuildingIsEngineeredNonResidentialCriticalFacility BuildingIsEngineeredNonResidentialCriticalFacility; //for non-residential, determine default percent content damage
         public EBuildingHasActiveNFIPPolicy BuildingHasActiveNFIPPolicy; //whether has a flood insurance policy from the National Flood Insurance Program
         public string DamageCurve;
-        public double FirstFloorAreaSqFt; // non-residential and critical structure; single story = footprint of building
         public double SizeofBuildingSqFt; //total living square footage
         public EUseDefaultBuildingReplacementValue UseDefaultBuildingReplacementValue; // For all building types, default = $100 per sqft
         public double BuildingReplacementValuePerSqFt; // if UseDefaultbuildingReplacementValue is Yes, then leave blank
@@ -424,9 +469,12 @@ namespace MaskRaster
         public int NumberPoliceOfficerWorkingatStationWhenShutdownByDisaster;
 
 
-
-        public void func() {
-            string p = DictBuildingUseNonResidential[EBuildingUseNonResidential.EDU1];
+        public Building()
+        {
+            WSEmax = new Dictionary<string, double>();
+            Depthmax = new Dictionary<string, double>();
         }
+
+        
     }
 }

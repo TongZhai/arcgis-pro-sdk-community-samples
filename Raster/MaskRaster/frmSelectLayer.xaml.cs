@@ -22,7 +22,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Core.Data;
 using System.IO;
 using ArcGIS.Desktop.Core;
-
+using Microsoft.Win32;
 
 namespace MaskRaster
 {
@@ -54,7 +54,7 @@ namespace MaskRaster
 
             var layers = MapView.Active.Map.GetLayersAsFlattenedList(); //.OfType<FeatureLayer>().Where(fl => fl.Name.Contains(xlsLayerName)).FirstOrDefault();
             int numLayersAdded = 0;
-            
+
             foreach (var alt in _Alternatives)
             {
                 var datatype = GridDataType.WSEMAX;
@@ -62,7 +62,7 @@ namespace MaskRaster
                 {
                     datatype = GridDataType.DEPTHMAX;
                 }
-                
+
                 if (layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
                 {
                     AddLayer(alt.fullpath(datatype));
@@ -91,7 +91,7 @@ namespace MaskRaster
                 if (cboVectorLayers.Items.Count == 1)
                 {
                     buildingFootprint = (cboVectorLayers.SelectedItem as List<FeatureLayer>)[0] as FeatureLayer;
-                } 
+                }
                 else
                 {
                     buildingFootprint = cboVectorLayers.SelectedItem as FeatureLayer;
@@ -114,10 +114,41 @@ namespace MaskRaster
             var lyr_list = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList();
             this.cboVectorLayers.DisplayMemberPath = "Name";
             this.cboVectorLayers.Items.Clear();
-            foreach(FeatureLayer layer in lyr_list)
+            foreach (FeatureLayer layer in lyr_list)
             {
                 this.cboVectorLayers.Items.Add(layer);
             }
+        }
+
+        private void btnBrowseBCATemplate_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog fd = new OpenFileDialog
+            {
+                InitialDirectory = @"C:\",
+                Title = "Browse BCA Riverine Flood Template File",
+
+                CheckFileExists = true,
+                CheckPathExists = true,
+
+                DefaultExt = "xlsx",
+                Filter = "Excel files (*.xlsx)|*.xlsx",
+                FilterIndex = 2,
+                RestoreDirectory = true,
+
+                ReadOnlyChecked = true,
+                ShowReadOnly = true
+            };
+
+            if (fd.ShowDialog() == true)
+            {
+                txtBCARiverineFloodTemplateFilePath.Text = fd.FileName;
+            }
+        }
+
+        private void btnSetupBCAInputs_Click(object sender, RoutedEventArgs e)
+        {
+            BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
+            BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives);
         }
     }
 

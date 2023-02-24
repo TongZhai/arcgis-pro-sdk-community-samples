@@ -443,6 +443,17 @@ namespace MaskRaster
                                     Geometry shape = f.GetShape();
 
                                     int buildingid = Convert.ToInt32(record["BID"]);
+                                    Building b;
+                                    if (BCA.Buildings.ContainsKey(buildingid))
+                                    {
+                                        b = BCA.Buildings[buildingid];
+                                    } 
+                                    else
+                                    {
+                                        b = new Building();
+                                        b.BID = buildingid;
+                                        BCA.Buildings.Add(buildingid, b);
+                                    }
 
                                     int pixelBlockWidth = Convert.ToInt32(shape.Extent.XMax - shape.Extent.XMin);
                                     int pixelBlockHeight = Convert.ToInt32(shape.Extent.YMax - shape.Extent.YMin);
@@ -525,7 +536,7 @@ namespace MaskRaster
                                     }
 
                                     //record result
-                                    if (!Alternative.BuildingLatLong.ContainsKey(buildingid))
+                                    if (b.latitude == null || b.longitude == null)
                                     {
                                         //only save one copy of the building location x,y (lat-long) and footprint size
                                         //assuming all alternatives are using the same set of building footprints
@@ -545,17 +556,27 @@ namespace MaskRaster
                                         double latitude = Convert.ToDouble(record["Latitude"]);
                                         double longitude = Convert.ToDouble(record["Longitude"]);
                                         double buildingfootprintsqft = Convert.ToDouble(record["Shape_Area"]);
-                                        Alternative.BuildingLatLong.Add(buildingid, (latitude, longitude));
-                                        Alternative.BuildingFirstFloorSqFt.Add(buildingid, buildingfootprintsqft);
+                                        string buildingtype = Convert.ToString(record["BType"]);
+                                        string location = Convert.ToString(record["location"]);
+                                        b.latitude = latitude; 
+                                        b.longitude = longitude;
+                                        b.FirstFloorAreaSqFt = buildingfootprintsqft;
+                                        b.OccupancyType = buildingtype;
+                                        b.Address = location;
                                     }
                                     if (gridDataType == GridDataType.WSEMAX)
                                     {
-                                        alt.BuildingWSEmax.Add(buildingid, ras_val);
+                                        if (!b.WSEmax.ContainsKey(alt.Name))
+                                        {
+                                            b.WSEmax.Add(alt.Name, ras_val);
+                                        }
                                     }
                                     else
                                     {
-                                        alt.BuildingFloodDepth.Add(buildingid, ras_val);
-                                        alt.BuildingFlooded.Add(buildingid, ras_val > 0);
+                                        if (!b.Depthmax.ContainsKey(alt.Name))
+                                        {
+                                            b.Depthmax.Add(alt.Name, ras_val);
+                                        }
                                     }
                                 }
                                 ps.Progressor.Value++;

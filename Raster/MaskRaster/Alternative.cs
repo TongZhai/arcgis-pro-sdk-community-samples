@@ -13,8 +13,20 @@ namespace MaskRaster
     {
         public static string basefolder;
         public static READRASTERMETHOD method;
+
+        /*
         public static SortedDictionary<int, (double, double)> BuildingLatLong {get; set;}
         public static SortedDictionary<int, double> BuildingFirstFloorSqFt { get; set; }
+        public static SortedDictionary<int, string> BuildingOccupancyType { get; set; }
+        public static SortedDictionary<int, string> BuildingAddress { get; set; }
+        public static SortedDictionary<int, double> BuildingTerrainElevationFt { get; set; }
+
+        public SortedDictionary<int, double> BuildingWSEmax { get; set; }
+        public SortedDictionary<int, bool> BuildingFlooded {get; set;}
+        public SortedDictionary<int, double> BuildingFloodDepth {get; set;}
+
+        public static SortedDictionary<int, Building> Buildings { get; set; }
+        */
 
         public string Name { get; set; }
         public string PathWSEMAX { get; set; }
@@ -23,17 +35,16 @@ namespace MaskRaster
         public RasterLayer Depthmax { get; set; }
         public RasterLayer DataLayer { get; set; }
 
-        public SortedDictionary<int, double> BuildingWSEmax { get; set; }
-        public SortedDictionary<int, bool> BuildingFlooded {get; set;}
-        public SortedDictionary<int, double> BuildingFloodDepth {get; set;}
 
         public Alternative(string name)
         {
             Name = name;
+            /*
             BuildingWSEmax = new SortedDictionary<int, double>();
             BuildingLatLong = new SortedDictionary<int, (double, double)>();
             BuildingFloodDepth = new SortedDictionary<int, double>();
             BuildingFlooded= new SortedDictionary<int, bool>();
+            */
         }
 
         public string fullpath(GridDataType datatype)
