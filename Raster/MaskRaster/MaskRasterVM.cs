@@ -26,6 +26,7 @@ using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Core.Data;
 using System.IO;
 using ArcGIS.Desktop.Core;
+using System.Windows.Media.Animation;
 
 namespace MaskRaster
 {
@@ -373,13 +374,13 @@ namespace MaskRaster
         /// collate and output into textfile in user specified folder
         /// </summary>
         /// <param name="geometry">Nominal (i.e., null) rectangle geometry from the Add-in trigger.</param>
-        public static async void ReadRaster(FeatureLayer footprintLayer, GridDataType gridDataType,  int bandindex = 0)
+        public static async void ReadRaster(FeatureLayer footprintLayer, GridDataType gridDataType, int bandindex = 0)
         {
             if (MapView.Active == null)
             {
                 return;
             }
-            _bandindex = bandindex; 
+            _bandindex = bandindex;
             if (_bandindex < 0)
             {
                 MessageBox.Show($"Should only read from first band of raster dataset.");
@@ -403,12 +404,13 @@ namespace MaskRaster
                 foreach (Layer firstSelectedLayer in lyr_rasters)
                 {
                     // Working with rasters requires the MCT.
-                    CancelableProgressorSource ps = new CancelableProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", "Cancel", false);
+                    //CancelableProgressorSource ps = new CancelableProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", "Cancel", false);
+                    ProgressorSource ps = new ProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", false);
                     await QueuedTask.Run(() =>
                     {
                         var srlatlong = new SpatialReferenceBuilder(4326);
 
-                        ps.Max = (uint) numBuildings;
+                        ps.Max = (uint)numBuildings;
                         ps.Progressor.Value = 0;
                         if (footprintLayer.ConnectionStatus == ConnectionStatus.Broken)
                             throw new ApplicationException("Footprint layer connection broken");
@@ -432,7 +434,9 @@ namespace MaskRaster
                         if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
                             inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
 
+                        Building b;
                         FeatureClass featfp = footprintLayer.GetFeatureClass();
+                        bool readAlready = false;
                         using (var rc = featfp.Search())
                         {
                             while (rc.MoveNext())
@@ -443,139 +447,172 @@ namespace MaskRaster
                                     Geometry shape = f.GetShape();
 
                                     int buildingid = Convert.ToInt32(record["BID"]);
-                                    Building b;
-                                    if (BCA.Buildings.ContainsKey(buildingid))
-                                    {
-                                        b = BCA.Buildings[buildingid];
-                                    } 
-                                    else
+                                    int? bkey = BCA.Buildings.Keys.Where(bk => bk == buildingid).FirstOrDefault();
+                                    if (bkey == null)
                                     {
                                         b = new Building();
                                         b.BID = buildingid;
                                         BCA.Buildings.Add(buildingid, b);
                                     }
-
-                                    int pixelBlockWidth = Convert.ToInt32(shape.Extent.XMax - shape.Extent.XMin);
-                                    int pixelBlockHeight = Convert.ToInt32(shape.Extent.YMax - shape.Extent.YMin);
-
-                                    RasterBand rb = inputRaster.GetBand(0);
-
-                                    //Method 2: read raster data by a point with fixed window
-                                    // create a pixelblock representing a 3x3 window to hold the raster values
-                                    var pixelBlock = inputRaster.CreatePixelBlock(3, 3);
-                                    var shape_ctrpt = shape.Extent.CenterCoordinate.ToMapPoint();
-
-                                    // create a container to hold the pixel values
-                                    Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
-
-                                    // reproject the raster envelope to match the map spatial reference
-                                    var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
-
-                                    // if the cursor is within the extent of the raster
-                                    if (GeometryEngine.Instance.Contains(rasterEnvelope, shape_ctrpt))
-                                    {
-                                        // find the map location expressed in row,column of the raster
-                                        var pixelLocationAtRaster = inputRaster.MapToPixel(shape_ctrpt.X, shape_ctrpt.Y);
-
-                                        // fill the pixelblock with the pointer location
-                                        inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
-
-                                        // retrieve the actual pixel values from the pixelblock representing the red raster band
-                                        pixelArray = pixelBlock.GetPixelData(_bandindex, false);
-
-                                    }
                                     else
                                     {
-                                        // fill the container with 0s
-                                        Array.Clear(pixelArray, 0, pixelArray.Length);
+                                        b = BCA.Buildings[buildingid];
                                     }
 
-                                    double ras_val = 0;
-                                    int num = 0;
-                                    //int method = 1; // 0 will be a direct read; 1 will be an average
-                                    int ind = 0;
-                                    int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
-                                    //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
-                                    foreach (float v in pixelArray)
-                                    {
-                                        if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
-                                        { 
-                                            if (ind == centerIndex)
-                                            {
-                                                ras_val = v;
-                                                break;
-                                            }
-                                        } 
-                                        else
-                                        {
-                                            if (v >= 0)
-                                            {
-                                                ras_val += v;
-                                                num++;
-                                            }
-                                        }
-                                        ind++;
-                                    }
-                                    if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
-                                    {
-                                        if (ras_val < 0)
-                                        {
-                                            ras_val = -9999;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (num > 0)
-                                        {
-                                            ras_val = ras_val / num;
-                                        }
-                                        else
-                                        {
-                                            ras_val = -9999;
-                                        }
-                                    }
-
-                                    //record result
-                                    if (b.latitude == null || b.longitude == null)
-                                    {
-                                        //only save one copy of the building location x,y (lat-long) and footprint size
-                                        //assuming all alternatives are using the same set of building footprints
-
-                                        /* Try to calculate lat-long from Stateplane x,y
-                                         * looks like it is not possible... */
-                                        /*
-                                        var llcoord = new Coordinate2D(shape_ctrpt.X, shape_ctrpt.Y);
-                                        var mp = llcoord.ToMapPoint(srlatlong.BaseGeographic);
-                                        var g = srlatlong.BaseGeographic.GcsWkid;
-                                        var g1 = srlatlong.IsGeographic;
-                                        var g2 = srlatlong.BaseGeographic.LeftLongitude;
-                                        var g3 = srlatlong.BaseGeographic.RightLongitude;
-                                        */
-                                        
-                                        //Alternative.BuildingXY.Add(buildingid, (shape_ctrpt.X, shape_ctrpt.Y));
-                                        double latitude = Convert.ToDouble(record["Latitude"]);
-                                        double longitude = Convert.ToDouble(record["Longitude"]);
-                                        double buildingfootprintsqft = Convert.ToDouble(record["Shape_Area"]);
-                                        string buildingtype = Convert.ToString(record["BType"]);
-                                        string location = Convert.ToString(record["location"]);
-                                        b.latitude = latitude; 
-                                        b.longitude = longitude;
-                                        b.FirstFloorAreaSqFt = buildingfootprintsqft;
-                                        b.OccupancyType = buildingtype;
-                                        b.Address = location;
-                                    }
+                                    readAlready = false;
                                     if (gridDataType == GridDataType.WSEMAX)
                                     {
-                                        if (!b.WSEmax.ContainsKey(alt.Name))
+                                        if (b.WSEmax.ContainsKey(alt.Name))
                                         {
-                                            b.WSEmax.Add(alt.Name, ras_val);
+                                            readAlready = true;
                                         }
                                     }
-                                    else
+                                    else if (gridDataType == GridDataType.DEPTHMAX)
                                     {
-                                        if (!b.Depthmax.ContainsKey(alt.Name))
+                                        if (b.Depthmax.ContainsKey(alt.Name))
                                         {
-                                            b.Depthmax.Add(alt.Name, ras_val);
+                                            readAlready = true;
+                                        }
+                                    }
+                                    else if (gridDataType == GridDataType.TERRAIN)
+                                    {
+                                        if (b.Terrain.ContainsKey(alt.Name))
+                                        {
+                                            readAlready = true;
+                                        }
+                                    }
+
+                                    if (!readAlready)
+                                    {
+                                        int pixelBlockWidth = Convert.ToInt32(shape.Extent.XMax - shape.Extent.XMin);
+                                        int pixelBlockHeight = Convert.ToInt32(shape.Extent.YMax - shape.Extent.YMin);
+
+                                        RasterBand rb = inputRaster.GetBand(0);
+
+                                        //Method 2: read raster data by a point with fixed window
+                                        // create a pixelblock representing a 3x3 window to hold the raster values
+                                        var pixelBlock = inputRaster.CreatePixelBlock(3, 3);
+                                        var shape_ctrpt = shape.Extent.CenterCoordinate.ToMapPoint();
+
+                                        // create a container to hold the pixel values
+                                        Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
+
+                                        // reproject the raster envelope to match the map spatial reference
+                                        var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
+
+                                        // if the cursor is within the extent of the raster
+                                        if (GeometryEngine.Instance.Contains(rasterEnvelope, shape_ctrpt))
+                                        {
+                                            // find the map location expressed in row,column of the raster
+                                            var pixelLocationAtRaster = inputRaster.MapToPixel(shape_ctrpt.X, shape_ctrpt.Y);
+
+                                            // fill the pixelblock with the pointer location
+                                            inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
+
+                                            // retrieve the actual pixel values from the pixelblock representing the red raster band
+                                            pixelArray = pixelBlock.GetPixelData(_bandindex, false);
+
+                                        }
+                                        else
+                                        {
+                                            // fill the container with 0s
+                                            Array.Clear(pixelArray, 0, pixelArray.Length);
+                                        }
+
+                                        double ras_val = 0;
+                                        int num = 0;
+                                        //int method = 1; // 0 will be a direct read; 1 will be an average
+                                        int ind = 0;
+                                        int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
+                                                             //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
+                                        foreach (float v in pixelArray)
+                                        {
+                                            if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
+                                            {
+                                                if (ind == centerIndex)
+                                                {
+                                                    ras_val = v;
+                                                    break;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (v >= 0)
+                                                {
+                                                    ras_val += v;
+                                                    num++;
+                                                }
+                                            }
+                                            ind++;
+                                        }
+                                        if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
+                                        {
+                                            if (ras_val < 0)
+                                            {
+                                                ras_val = -9999;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (num > 0)
+                                            {
+                                                ras_val = ras_val / num;
+                                            }
+                                            else
+                                            {
+                                                ras_val = -9999;
+                                            }
+                                        }
+
+                                        //record result
+                                        if (b.latitude == null || b.longitude == null)
+                                        {
+                                            //only save one copy of the building location x,y (lat-long) and footprint size
+                                            //assuming all alternatives are using the same set of building footprints
+
+                                            /* Try to calculate lat-long from Stateplane x,y
+                                             * looks like it is not possible... */
+                                            /*
+                                            var llcoord = new Coordinate2D(shape_ctrpt.X, shape_ctrpt.Y);
+                                            var mp = llcoord.ToMapPoint(srlatlong.BaseGeographic);
+                                            var g = srlatlong.BaseGeographic.GcsWkid;
+                                            var g1 = srlatlong.IsGeographic;
+                                            var g2 = srlatlong.BaseGeographic.LeftLongitude;
+                                            var g3 = srlatlong.BaseGeographic.RightLongitude;
+                                            */
+
+                                            //Alternative.BuildingXY.Add(buildingid, (shape_ctrpt.X, shape_ctrpt.Y));
+                                            double latitude = Convert.ToDouble(record["Latitude"]);
+                                            double longitude = Convert.ToDouble(record["Longitude"]);
+                                            double buildingfootprintsqft = Convert.ToDouble(record["Shape_Area"]);
+                                            string buildingtype = Convert.ToString(record["BType"]);
+                                            string location = Convert.ToString(record["location"]);
+                                            b.latitude = latitude;
+                                            b.longitude = longitude;
+                                            b.FirstFloorAreaSqFt = buildingfootprintsqft;
+                                            b.OccupancyType = buildingtype;
+                                            b.Address = location;
+                                        }
+                                        if (gridDataType == GridDataType.WSEMAX)
+                                        {
+                                            if (!b.WSEmax.ContainsKey(alt.Name))
+                                            {
+                                                b.WSEmax.Add(alt.Name, ras_val);
+                                            }
+                                        }
+                                        else if (gridDataType == GridDataType.DEPTHMAX)
+                                        {
+                                            if (!b.Depthmax.ContainsKey(alt.Name))
+                                            {
+                                                b.Depthmax.Add(alt.Name, ras_val);
+                                            }
+                                        }
+                                        else if (gridDataType == GridDataType.TERRAIN)
+                                        {
+                                            if (!b.Terrain.ContainsKey(alt.Name))
+                                            {
+                                                b.Terrain.Add(alt.Name, ras_val);
+                                            }
                                         }
                                     }
                                 }

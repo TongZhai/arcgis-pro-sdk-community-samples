@@ -362,6 +362,7 @@ namespace MaskRaster
 
         public Dictionary<string, double> WSEmax; //alternative_ID -> WSEmax
         public Dictionary<string, double> Depthmax; //alternative_ID -> Depthmax
+        public Dictionary<string, double> Terrain; //alternative_ID -> Terrain
 
         //***** read once ****
         public double? latitude { get; set; }
@@ -369,7 +370,6 @@ namespace MaskRaster
         public double? FirstFloorAreaSqFt; // non-residential and critical structure; single story = footprint of building
         public string OccupancyType { get; set; }
         public string Address { get; set; }
-        public double? TerrainElevationFt { get; set; }
         //***** read once ****
 
         public EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility BuildingOutside100YearFloodAreaNonResidentialOnly; // Yes/No, for non-residential building only, determine displacement duration
@@ -473,6 +473,7 @@ namespace MaskRaster
         {
             WSEmax = new Dictionary<string, double>();
             Depthmax = new Dictionary<string, double>();
+            Terrain = new Dictionary<string, double>();
         }
 
         

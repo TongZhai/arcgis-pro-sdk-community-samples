@@ -275,7 +275,7 @@ namespace MaskRaster
             {
                 depth = 0;
                 WSEmax500Yr = Buildings[b_key].WSEmax["500Yr_Current"];
-                WSEmaxCurrent =Buildings[b_key].TerrainElevationFt;
+                WSEmaxCurrent = Buildings[b_key].Terrain[Buildings[b_key].Terrain.Keys.First()];
 
                 if (WSEmaxCurrent != null && WSEmax500Yr != null) 
                 { 
@@ -490,7 +490,7 @@ namespace MaskRaster
                         row = 0;
                         foreach (int bid in building_keys)
                         {
-                            myValues[row, 0] = (Buildings[bid].TerrainElevationFt).ToString();
+                            myValues[row, 0] = (Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()]).ToString();
                             row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
@@ -500,7 +500,7 @@ namespace MaskRaster
                         foreach (int bid in building_keys)
                         {
                             //assume streambed is just the terrain elevation as this is in the floodplain???
-                            myValues[row, 0] = (Buildings[bid].TerrainElevationFt).ToString();
+                            myValues[row, 0] = (Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()]).ToString();
                             row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
@@ -667,7 +667,7 @@ namespace MaskRaster
                             }
                             else
                             {
-                                if (Buildings[bid].WSEmax.ContainsKey("100Yr_Current") && Buildings[bid].WSEmax["100Yr_Current"] > Buildings[bid].TerrainElevationFt)
+                                if (Buildings[bid].WSEmax.ContainsKey("100Yr_Current") && Buildings[bid].WSEmax["100Yr_Current"] > Buildings[bid].Terrain[Buildings[bid].Terrain.Keys.First()])
                                 {
                                     myValues[row, 0] = nameof(EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility.No);
                                 }

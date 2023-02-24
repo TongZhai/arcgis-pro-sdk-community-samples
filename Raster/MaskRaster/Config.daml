@@ -80,6 +80,6 @@ limitations under the License.
     <Alternative type="DEPTHMAX" id="10Yr_LeveeSouthNorth">AltLVSouthNorth10PCT\Depth (Max) AltLVSouthNorth 10Yr.vrt</Alternative>
     <Alternative type="DEPTHMAX" id="100Yr_LeveeSouthNorth">AltLVSouthNorth1PCT\Depth (Max) AltLVSouthNorth 100Yr.vrt</Alternative>
 
-    <Alternative type="TERRAIN" id="TERRAIN">Terrain\Terrain_Clip.vrt</Alternative>
+    <Alternative type="TERRAIN" id="TerrainCurrent">Terrain\Terrain_Clip.vrt</Alternative>
   </SMCAlternatives>
 </ArcGIS>

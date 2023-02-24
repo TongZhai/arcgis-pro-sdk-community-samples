@@ -11,6 +11,7 @@ namespace MaskRaster
 {
 	public enum GridDataType
 	{
+		TERRAIN,
 		WSEMAX,
 		DEPTHMAX
 	}
@@ -88,6 +89,9 @@ namespace MaskRaster
 							break;
 						case nameof(GridDataType.DEPTHMAX):
 							alt.PathDEPTHMAX = alt_path;
+							break;
+						case nameof(GridDataType.TERRAIN):
+							alt.PathTERRAIN= alt_path;
 							break;
 					}
 				}

@@ -31,6 +31,7 @@ namespace MaskRaster
         public string Name { get; set; }
         public string PathWSEMAX { get; set; }
         public string PathDEPTHMAX { get; set; }
+        public string PathTERRAIN { get; set; }
         public RasterLayer WSEmax { get; set; }
         public RasterLayer Depthmax { get; set; }
         public RasterLayer DataLayer { get; set; }
@@ -55,6 +56,8 @@ namespace MaskRaster
                     return System.IO.Path.Combine(basefolder, PathWSEMAX);
                 case GridDataType.DEPTHMAX:
                     return System.IO.Path.Combine(basefolder, PathDEPTHMAX);
+                case GridDataType.TERRAIN:
+                    return System.IO.Path.Combine(basefolder, PathTERRAIN);
             }
             return "";
         }

@@ -26,6 +26,7 @@
         <Label x:Name="lblAlternatives" Content="Alternatives:" HorizontalAlignment="Left" Margin="105,219,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.036,-0.54"/>
         <ComboBox x:Name="cboAlternatives" HorizontalAlignment="Left" Margin="185,223,0,0" VerticalAlignment="Top" Width="334" RenderTransformOrigin="0.482,-0.398"/>
         <CheckBox x:Name="chkAllAlternatives" Content="Include All Alternatives" HorizontalAlignment="Left" Margin="567,227,0,0" VerticalAlignment="Top"/>
+        <RadioButton x:Name="rdoGridTerrain" Content="Terrain" HorizontalAlignment="Left" Margin="369,109,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

@@ -73,6 +73,10 @@ namespace MaskRaster
                 {
                     datatype = GridDataType.DEPTHMAX;
                 }
+                if (rdoGridTerrain.IsChecked == true)
+                {
+                    datatype = GridDataType.TERRAIN;
+                }
 
                 if (layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
                 {
@@ -115,6 +119,10 @@ namespace MaskRaster
                 return;
             }
             var gridDataType = rdoDepthMax.IsChecked == true ? GridDataType.DEPTHMAX : GridDataType.WSEMAX;
+            if (rdoGridTerrain.IsChecked == true)
+            {
+                gridDataType = GridDataType.TERRAIN;
+            }
             MaskRasterVM.ReadRaster(buildingFootprint, gridDataType);
 
         }
