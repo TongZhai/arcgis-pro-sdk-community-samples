@@ -37,6 +37,17 @@ namespace MaskRaster
         {
             _Alternatives = alternatives;
             InitializeComponent();
+            listAlternatives();
+        }
+
+        private void listAlternatives()
+        {
+            this.cboAlternatives.DisplayMemberPath = "Name";
+            this.cboAlternatives.Items.Clear();
+            foreach (var alt in _Alternatives)
+            {
+                this.cboAlternatives.Items.Add(alt);
+            }
         }
 
         private void btnLoadGridLayers_Click(object sender, RoutedEventArgs e)
@@ -148,7 +159,7 @@ namespace MaskRaster
         private void btnSetupBCAInputs_Click(object sender, RoutedEventArgs e)
         {
             BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
-            BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives);
+            BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
         }
     }
 

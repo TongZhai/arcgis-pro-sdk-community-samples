@@ -28,9 +28,9 @@ namespace MaskRaster
         public System.Data.DataTable Tab_CriticalFacilityInfo;
 
         public static Dictionary<string, string> Dict_RiverineFlood;
-        public Dictionary<string, string> Dict_FloodBeforeMitigation;
-        public Dictionary<string, string> Dict_FloodAfterMitigation;
-        public Dictionary<string, string> Dict_CriticalFacilityInfo;
+        public static Dictionary<string, string> Dict_FloodBeforeMitigation;
+        public static Dictionary<string, string> Dict_FloodAfterMitigation;
+        public static Dictionary<string, string> Dict_CriticalFacilityInfo;
 
         public void Setup()
         {
@@ -139,6 +139,26 @@ namespace MaskRaster
             Dict_RiverineFlood.Add("44_AR", "One Time Displacement Cost ($/sq.ft)");
             Dict_RiverineFlood.Add("45_AS", "Use Default Lodging Per Diem?");
             Dict_RiverineFlood.Add("46_AT", "Current Federal Lodging Per Diem ($/night)");
+            Dict_RiverineFlood.Add("47_AU", "");
+            Dict_RiverineFlood.Add("48_AV", "Use Default Meals Per Diem?");
+            Dict_RiverineFlood.Add("49_AW", "Current Federal Meals Per Diem ($/day)");
+            Dict_RiverineFlood.Add("50_AX", "Number of Building Residents");
+            Dict_RiverineFlood.Add("51_AY", "Number of Volunteers Required");
+            Dict_RiverineFlood.Add("52_AZ", "Enter the Number of Days Lodging for Volunterr ($)");
+            Dict_RiverineFlood.Add("53_BA", "Use Default Per-Person cost of Lodging?");
+            Dict_RiverineFlood.Add("54_BB", "enter the Per-Person Cost of Lodging for a Volunteer ($)");
+            Dict_RiverineFlood.Add("55_BC", "Number of Workers");
+            Dict_RiverineFlood.Add("56_BD", "Use Acres?");
+            Dict_RiverineFlood.Add("57_BE", "Total Project Area (acres or sq.ft)");
+            Dict_RiverineFlood.Add("58_BF", "Urban Green Open Space (%)");
+            Dict_RiverineFlood.Add("59_BG", "Rural Green Open Space (%)");
+            Dict_RiverineFlood.Add("60_BH", "Riparian (%)");
+            Dict_RiverineFlood.Add("61_BI", "Coastal Wetlands (%)");
+            Dict_RiverineFlood.Add("62_BJ", "Inland Wetlands (%)");
+            Dict_RiverineFlood.Add("63_BK", "Forest (%)");
+            Dict_RiverineFlood.Add("64_BL", "Coral Reefs (%)");
+            Dict_RiverineFlood.Add("65_BM", "Shellfish Reefs (%)");
+            Dict_RiverineFlood.Add("66_BN", "Beaches & Dunes (%)");
 
             Tab_FloodBeforeMitigation = new System.Data.DataTable("Flood Before Mitigation");
             Tab_FloodBeforeMitigation.Columns.Add("1_A", typeof(string));
@@ -245,30 +265,28 @@ namespace MaskRaster
             }
         }
 
-        public static void SetupBCAInputs(ProgressBar pb, List<Alternative> alts)
+        public static void SetupBCAInputs(ProgressBar pb, List<Alternative> alts, Alternative selectedAlternative)
         {
             pb.Minimum = 0;
             pb.Maximum = 4;
             pb.Value = 1;
 
             int column;
-
-            var worksheet = BCAWorkbook.Worksheets[BCA_Worksheet1] as Worksheet;
-
-            int[] keys = Buildings.Keys.ToArray();
+            int[] building_keys = Buildings.Keys.ToArray();
 
             //Riverine Flood worksheet setup
+            var worksheet = BCAWorkbook.Worksheets[BCA_Worksheet1] as Worksheet;
             foreach (var key in Dict_RiverineFlood.Keys)
             {
                 int.TryParse(key.Substring(0, key.LastIndexOf("_")), out column);
-                string[,] myValues = new string[keys.Length, 1];
+                string[,] myValues = new string[building_keys.Length, 1];
 
                 switch (column)
                 {
                     case 1: //id
-                        for (int bid = 0; bid < keys.Length; bid++)
+                        for (int bid = 0; bid < building_keys.Length; bid++)
                         {
-                            myValues[bid, 0] = keys[bid].ToString();
+                            myValues[bid, 0] = building_keys[bid].ToString();
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         /*
@@ -278,7 +296,7 @@ namespace MaskRaster
                         */
                         break;
                     case 2: //street address
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = Buildings[bid].Address;
                         }
@@ -290,28 +308,28 @@ namespace MaskRaster
                         */
                         break;
                     case 3: //city
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = Building.City; 
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 4: //State
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = Building.State; 
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 5: //ZipCode
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = Building.ZipCode; 
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 6: //County
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = Building.County; 
                         }
@@ -319,7 +337,7 @@ namespace MaskRaster
                         break;
                     case 7: //Latitude 
                         double? lat;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             lat = Buildings[bid].latitude;
                             myValues[bid, 0] = lat == null? "" : lat.ToString();
@@ -328,7 +346,7 @@ namespace MaskRaster
                         break;
                     case 8: //Longitude
                         double? lon;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             lon = Buildings[bid].longitude;
                             myValues[bid, 0] = lon == null? "" : lon.ToString();
@@ -337,7 +355,7 @@ namespace MaskRaster
                         break;
                     case 9: //Structure Type
                         string ot = ""; 
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Res") || ot.StartsWith("Mobi") || ot.StartsWith("Deta"))
@@ -356,28 +374,28 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 10: //Mitigation Action Type
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = (nameof(EMitigationActionType.Drainage_Improvement)).Replace("_", " ");
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 11: //Project Useful Life
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = "50";
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 12: //Mitigation Project Cost $
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = "1.0"; //this could be the total cost of project/number of buildings
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 13: //Use default # of years of maintenance
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = nameof(EUseDefaultYearsMaintenance.Yes);
                         }
@@ -393,21 +411,21 @@ namespace MaskRaster
                         */
                         break;
                     case 15: //Annual maintenance cost
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = "0";
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 16: //Lowest floor elevation of property
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             myValues[bid, 0] = (Buildings[bid].TerrainElevationFt).ToString();
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 17: //Streambed Elevation at Property location
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             //assume streambed is just the terrain elevation as this is in the floodplain???
                             myValues[bid, 0] = (Buildings[bid].TerrainElevationFt).ToString();
@@ -415,21 +433,21 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 18: //Feet lowest floor is being raised
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   //Only required if mitigation action is: Elevation
                             myValues[bid, 0] = "";
                         }
                         //FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 19: //Elevation for the top of barrier or floodproofing in ft
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   //Only required if mitigation action is: floodproofing; others blank
                             myValues[bid, 0] = "";
                         }
                         //FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 20: //Building Type (residential)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   //Only required if residential structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi"))
@@ -452,7 +470,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 21: //Building Use (non-residential)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   //Only required if non-residential structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -499,7 +517,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 22: //Building type (Non-Residential)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   //Only required if non-residential /critical facility structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -556,7 +574,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 23: //Building is outside 100Yr flood area (non-residential/critical facility)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   //Only required if non-residential structure; others blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -582,7 +600,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 24: //Building has basement (Residential)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // For residential building: yes/no; other blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi")) 
@@ -601,7 +619,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 25: //Building is engineered (Non-Residential/Critical Facility)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // For non-residential building: yes/no; other blank?
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -616,7 +634,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 26: //Building has active NFIP policy
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // For all buildings: yes/no;
                             // ToDo: need to determine
                             ot = Buildings[bid].OccupancyType;
@@ -632,7 +650,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 27: //Damage Curve
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for all structures
                             // ToDo: need to determine
                             ot = Buildings[bid].OccupancyType;
@@ -696,7 +714,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 28: //First Floor Area (Non-Residential/Critical Facility only) in sqft
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for non-residential and critical facility only, other blank
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -711,7 +729,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 29: //Size of building in sq.ft
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for all structures, enter total square footage for the building;
                             // for residential building, only livable area
                             ot = Buildings[bid].OccupancyType;
@@ -728,7 +746,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 30: //use default building replacement value i.e. $100/sqft
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for all structures
                             //ot = Alternative.BuildingOccupancyType[bid];
                             myValues[bid, 0] = nameof(EUseDefaultBuildingReplacementValue.Yes);
@@ -737,7 +755,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 31: //Building replacement value, leave blank if above is Yes
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             if(Buildings[bid].UseDefaultBuildingReplacementValue == EUseDefaultBuildingReplacementValue.No)
                             {
@@ -751,7 +769,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 32: //use default demolition threshold, i.e. 50%
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for all structures
                             //ot = Alternative.BuildingOccupancyType[bid];
                             myValues[bid, 0] = nameof(EUseDefaultDemolitionThreshold.Yes);
@@ -760,7 +778,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 33: //Demolition threshold value, leave blank if above is Yes
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             if(Buildings[bid].UseDefaultDemolitionThreshold == EUseDefaultDemolitionThreshold.No)
                             {
@@ -774,7 +792,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 34: //use default building content value
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for all structures
                             //ot = Buildings[bid].OccupancyType;
                             myValues[bid, 0] = nameof(EUseDefaultBuildingContentsValue.Yes);
@@ -783,7 +801,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 35: //Building content value ($), leave blank if above is Yes
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             if (Buildings[bid].UseDefaultBuildingContentsValue == EUseDefaultBuildingContentsValue.No)
                             {
@@ -797,7 +815,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 36: //Residential building Utilities are elevated
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for residential only,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -840,7 +858,7 @@ namespace MaskRaster
                         */
                         break;
                     case 40: //Annual operating budget ($), for non-residential building only; others blank
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for non-residential building only other blank
                             // ToDo: need to determine
                             ot = Buildings[bid].OccupancyType;
@@ -897,7 +915,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 41: //Use default monthly cost of temporary space
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for non-residential critical facility only,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -915,7 +933,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 42: //Monthly cost of temp space ($/sqft/month)// for non-residential critical facility only, other blank
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -938,7 +956,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 43: //Use default one time displacement cost
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for non-residential critical facility only,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -956,7 +974,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 44: //One time displacement cost ($/sq.ft)// for non-residential critical facility only, others blank
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -979,7 +997,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 45: //Use default lodging per diem, for residential building
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -997,7 +1015,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 46: //Current federal lodging per diem ($/night), // leave blank if above is Yes 
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             ot = Buildings[bid].OccupancyType;
                             if (ot.StartsWith("Mobi") || ot.StartsWith("Res") || ot.StartsWith("Deta"))
@@ -1022,7 +1040,7 @@ namespace MaskRaster
                     case 47: //this column is left empty in the FEMA template
                         break;
                     case 48: //Use default Meals per diem (yes/no)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -1040,7 +1058,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 49: //Current federal Meals per diem ($/day)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             if (Buildings[bid].UseDefaultMealsPerDiem == EUseDefaultMealsPerDiem.Yes)
@@ -1059,7 +1077,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 50: //# of Building residents
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for residential building,
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -1076,7 +1094,7 @@ namespace MaskRaster
                         break;
                     case 51: //# of volunteers required, for all structure types
                         //assume 1 volunteer per building, BCA Tool guide might have more info
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             //ot = Buildings[bid].OccupancyType;
                             myValues[bid, 0] = ""; 
@@ -1086,7 +1104,7 @@ namespace MaskRaster
                         break;
                     case 52: //# of days lodging for volunteers, if above is greater than 0
                         //assume 3 days lodging per volunteer per building, BCA Tool guide might have more info
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {
                             //ot = Buildings[bid].OccupancyType;
                             if (Buildings[bid].NumberOfVolunteersRequired> 0)
@@ -1103,7 +1121,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 53: //Use default per-person cost of lodging, (yes/no)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for residential building
                             // others blank?
                             ot = Buildings[bid].OccupancyType;
@@ -1121,7 +1139,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 54: // per-person cost of lodging for a volunteer, ($)
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   // for all structures
                             // blank if above is Yes
                             ot = Buildings[bid].OccupancyType;
@@ -1153,7 +1171,7 @@ namespace MaskRaster
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
                     case 55: // # of full time workers in the home, for residential buildings only
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for residential buildings // others blank
                             ot = Buildings[bid].OccupancyType;
@@ -1170,7 +1188,7 @@ namespace MaskRaster
                         break;
                     case 56: // if ecosystem services benefit applicable for the project, determine area to be acquired is in Acre or sqft
                         bool needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             ot = Buildings[bid].OccupancyType;
@@ -1190,7 +1208,7 @@ namespace MaskRaster
                         break;
                     case 57: // if ecosystem services benefit applicable for the project, determine area to be acquired sq.ft or acre 
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             ot = Buildings[bid].OccupancyType;
@@ -1217,7 +1235,7 @@ namespace MaskRaster
                         break;
                     case 58: // if ecosystem services benefit applicable for the project, determine % Green open space
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1242,7 +1260,7 @@ namespace MaskRaster
                         break;
                     case 59: // if ecosystem services benefit applicable for the project, determine % Rural Green open space
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1267,7 +1285,7 @@ namespace MaskRaster
                         break;
                     case 60: // if ecosystem services benefit applicable for the project, determine % riparian
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1292,7 +1310,7 @@ namespace MaskRaster
                         break;
                     case 61: // if ecosystem services benefit applicable for the project, determine % Coastal Wetlands
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1317,7 +1335,7 @@ namespace MaskRaster
                         break;
                     case 62: // if ecosystem services benefit applicable for the project, determine % inland Wetlands
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1342,7 +1360,7 @@ namespace MaskRaster
                         break;
                     case 63: // if ecosystem services benefit applicable for the project, determine % Forest
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1367,7 +1385,7 @@ namespace MaskRaster
                         break;
                     case 64: // if ecosystem services benefit applicable for the project, determine % Coral Reefs
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1392,7 +1410,7 @@ namespace MaskRaster
                         break;
                     case 65: // if ecosystem services benefit applicable for the project, determine % Shellfish Reefs
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1417,7 +1435,7 @@ namespace MaskRaster
                         break;
                     case 66: // if ecosystem services benefit applicable for the project, determine %  Beaches and Dunes
                         needEnterData = false;
-                        foreach (int bid in keys)
+                        foreach (int bid in building_keys)
                         {   
                             // for all struture types, could leave blank if no ecosystem benefit
                             if (Buildings[bid].MeasureAcquiredAreaInAcresPerEcosystemServices == EMeasureAcquiredAreaInAcresPerEcosystemServices.NA)
@@ -1441,12 +1459,211 @@ namespace MaskRaster
                         }
                         break;
                 }
-
-
             }
+            pb.Value++;
+
+            //Flood Before Mitigation Setup
+            worksheet = BCAWorkbook.Worksheets[BCA_Worksheet2] as Worksheet;
+            SetupRiverineFloodTemplateFloodBeforeAfterMitigation(worksheet, building_keys, "XYr_Current");
+            pb.Value++;
+
+            //Flood After Mitigation Setup
+            worksheet = BCAWorkbook.Worksheets[BCA_Worksheet3] as Worksheet;
+            SetupRiverineFloodTemplateFloodBeforeAfterMitigation(worksheet, building_keys, selectedAlternative.Name);
+            pb.Value++;
 
             //BCAWorkbook.Close();
             //App.Quit();
+        }
+
+        public static void SetupRiverineFloodTemplateFloodBeforeAfterMitigation(Worksheet worksheet, int[] building_keys, string alt_name)
+        {
+            string alt_scenario_name = alt_name.Substring(alt_name.IndexOf("_") + 1);
+
+            //Flood Before and After Mitigation keys are the same, so could use either one for iteration below.
+            int column = 0;
+            foreach (var key in Dict_FloodBeforeMitigation.Keys)
+            {
+                int.TryParse(key.Substring(0, key.LastIndexOf("_")), out column);
+                string[,] myValues = new string[building_keys.Length, 0];
+
+                switch (column)
+                {
+                    case 1: //id
+                        for (int bid = 0; bid < building_keys.Length; bid++)
+                        {
+                            myValues[bid, 0] = building_keys[bid].ToString();
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 2: //Use default recurrent intervals? (Yes/No) 10- 50- 100- 500-year events
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            //var ot = Buildings[bid].OccupancyType;
+                            myValues[bid, 0] = nameof(EUseDefaultRecurrenceIntervals.Yes);
+                            Buildings[bid].UseDefaultRecurrenceIntervals = EUseDefaultRecurrenceIntervals.Yes;
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 3: //Recurrence Interval (years) 1
+                        bool needDataEntry = false;
+                        int years1 = 10; // can change to some other year
+                        int years1Default = 10;
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
+                            {
+                                myValues[bid, 0] = years1.ToString();
+                                Buildings[bid].RecurrenceIntervalYears1 = years1;
+                                needDataEntry = true;
+                            }
+                            else
+                            {
+                                myValues[bid, 0] = "";
+                                Buildings[bid].RecurrenceIntervalYears1 = years1Default;
+                            }
+                        }
+                        if (needDataEntry)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
+                        break;
+                    case 4: //Water Surface Elevation 1 in feet
+                        string alt_key = "";
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            alt_key = Buildings[bid].RecurrenceIntervalYears1 + "Yr_" + alt_scenario_name;
+                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 5: //Discharge (cfs) 1
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            myValues[bid, 0] = "0.0";
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 6: //Recurrence Interval (years) 2
+                        int years2 = 50; //change to some other years
+                        int years2Default = 50;
+                        needDataEntry = false;
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
+                            {
+                                myValues[bid, 0] = years2.ToString();
+                                Buildings[bid].RecurrenceIntervalYears2 = years2;
+                                needDataEntry = true;
+                            }
+                            else
+                            {
+                                myValues[bid, 0] = "";
+                                Buildings[bid].RecurrenceIntervalYears2 = years2Default;
+                            }
+                        }
+                        if (needDataEntry)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
+                        break;
+                    case 7: //Water Surface Elevation 2 in feet
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            alt_key = Buildings[bid].RecurrenceIntervalYears2 + "Yr_" + alt_scenario_name;
+                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 8: //Discharge (cfs) 2
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            myValues[bid, 0] = "0.0";
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 9: //Recurrence Interval (years) 3
+                        int years3 = 100; //change to some other years
+                        int years3Default = 100;
+                        needDataEntry = false;
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
+                            {
+                                myValues[bid, 0] = years3.ToString();
+                                Buildings[bid].RecurrenceIntervalYears3 = years3;
+                                needDataEntry = true;
+                            }
+                            else
+                            {
+                                myValues[bid, 0] = "";
+                                Buildings[bid].RecurrenceIntervalYears3 = years3Default;
+                            }
+                        }
+                        if (needDataEntry)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
+                        break;
+                    case 10: //Water Surface Elevation 3 in feet
+                        alt_key = "";
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            alt_key = Buildings[bid].RecurrenceIntervalYears3 + "Yr_" + alt_scenario_name;
+                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 11: //Discharge (cfs) 3
+                        alt_key = "";
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            myValues[bid, 0] = "0.0";
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 12: //Recurrence Interval (years) 4
+                        int years4 = 500; //change to some other years
+                        int years4Default = 500;
+                        needDataEntry = false;
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            if (Buildings[bid].UseDefaultRecurrenceIntervals == EUseDefaultRecurrenceIntervals.No)
+                            {
+                                myValues[bid, 0] = years4.ToString();
+                                Buildings[bid].RecurrenceIntervalYears4 = years4;
+                                needDataEntry = true;
+                            }
+                            else
+                            {
+                                myValues[bid, 0] = "";
+                                Buildings[bid].RecurrenceIntervalYears4 = years4Default;
+                            }
+                        }
+                        if (needDataEntry)
+                        {
+                            FillColumnRiverineFlood(worksheet, column, myValues);
+                        }
+                        break;
+                    case 13: //Water Surface Elevation 4 in feet
+                        alt_key = "";
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            alt_key = Buildings[bid].RecurrenceIntervalYears4 + "Yr_" + alt_scenario_name;
+                            myValues[bid, 0] = Buildings[bid].WSEmax[alt_key].ToString();
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                    case 14: //Discharge (cfs) 4
+                        alt_key = "";
+                        foreach (int bid in building_keys)
+                        {   // for all structures
+                            myValues[bid, 0] = "0.0";
+                        }
+                        FillColumnRiverineFlood(worksheet, column, myValues);
+                        break;
+                }
+            }
         }
 
         public static void FillColumnRiverineFlood(Worksheet worksheet, int column, string[,] data)
