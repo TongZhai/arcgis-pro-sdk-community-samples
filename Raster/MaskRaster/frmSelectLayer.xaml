@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MaskRaster"
         mc:Ignorable="d"
-        Title="Layer Selection" Height="413" Width="812">
+        Title="FEMA BCA Input Setup" Height="413" Width="812">
     <Grid Width="812" Height="300">
         <Label x:Name="label" Content="Select A Raster Layer:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="192"/>
         <ComboBox x:Name="cboRasterLayers" HorizontalAlignment="Left" Margin="146,14,0,0" VerticalAlignment="Top" Width="492"/>
         <Label x:Name="label1" Content="Select a Vector Layer:" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top" Width="140"/>
-        <ComboBox x:Name="cboVectorLayers" HorizontalAlignment="Left" Margin="146,55,0,0" VerticalAlignment="Top" Width="492"/>
+        <ComboBox x:Name="cboVectorLayers" HorizontalAlignment="Left" Margin="146,55,0,0" VerticalAlignment="Top" Width="492" SelectionChanged="cboVectorLayers_SelectionChanged"/>
         <RadioButton x:Name="rdoWSEMax" Content="WSEmax" HorizontalAlignment="Left" Margin="171,109,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.21,0.595"/>
         <Label x:Name="label2" Content="Select Grid Data Type" HorizontalAlignment="Left" Margin="15,103,0,0" VerticalAlignment="Top" Width="135"/>
         <RadioButton x:Name="rdoDepthMax" Content="DepthMax" HorizontalAlignment="Left" Margin="268,108,0,0" VerticalAlignment="Top"/>
@@ -18,7 +18,7 @@
         <Button x:Name="btnLoadGridLayers" Content="Load Grid Data Layers" HorizontalAlignment="Left" Margin="15,149,0,0" VerticalAlignment="Top" Click="btnLoadGridLayers_Click"/>
         <Button x:Name="btnReadGridLayers" Content="Read Grids" HorizontalAlignment="Left" Margin="153,149,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.133,-0.178" Click="btnReadGridLayers_Click"/>
         <Button x:Name="btnGetRasters" Content="Get Rasters" HorizontalAlignment="Left" Margin="651,15,0,0" VerticalAlignment="Top" Width="129"/>
-        <TextBox x:Name="txtBCARiverineFloodTemplateFilePath" HorizontalAlignment="Left" Margin="185,192,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="453" Height="22"/>
+        <TextBox x:Name="txtBCARiverineFloodTemplateFilePath" HorizontalAlignment="Left" Margin="185,192,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="453" Height="22"/>
         <Label x:Name="lblBCATemplate" Content="BCA Riverine Flood Template:" HorizontalAlignment="Left" Margin="15,188,0,0" VerticalAlignment="Top"/>
         <Button x:Name="btnBrowseBCATemplate" Content="Browse" HorizontalAlignment="Left" Margin="651,193,0,0" VerticalAlignment="Top" Width="129" Click="btnBrowseBCATemplate_Click"/>
         <Button x:Name="btnSetupBCAInputs" Content="Write BCA Inputs" HorizontalAlignment="Left" Margin="80,270,0,0" VerticalAlignment="Top" Click="btnSetupBCAInputs_Click"/>
@@ -27,6 +27,7 @@
         <ComboBox x:Name="cboAlternatives" HorizontalAlignment="Left" Margin="185,223,0,0" VerticalAlignment="Top" Width="334" RenderTransformOrigin="0.482,-0.398"/>
         <CheckBox x:Name="chkAllAlternatives" Content="Include All Alternatives" HorizontalAlignment="Left" Margin="567,227,0,0" VerticalAlignment="Top"/>
         <RadioButton x:Name="rdoGridTerrain" Content="Terrain" HorizontalAlignment="Left" Margin="369,109,0,0" VerticalAlignment="Top"/>
+        <ListBox x:Name="listAttributes" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="500,95,175,131"/>
 
     </Grid>
 </Window>

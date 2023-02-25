@@ -169,6 +169,48 @@ namespace MaskRaster
             BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
             BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
         }
+
+        private async void cboVectorLayers_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            FeatureLayer buildingFootprint = null;
+            if (cboVectorLayers.SelectedItem != null)
+            {
+                if (cboVectorLayers.Items.Count == 1)
+                {
+                    buildingFootprint = (cboVectorLayers.SelectedItem as List<FeatureLayer>)[0] as FeatureLayer;
+                }
+                else
+                {
+                    buildingFootprint = cboVectorLayers.SelectedItem as FeatureLayer;
+                }
+
+            }
+            if (buildingFootprint == null)
+            {
+                return;
+            }
+            listAttributes.Items.Clear();
+            IReadOnlyList<Field> fields = null;
+            await QueuedTask.Run(async () =>
+            {
+                try
+                {
+                    fields = buildingFootprint.GetTable().GetDefinition().GetFields();
+                }
+                catch (Exception ex)
+                {
+                    fields = null;
+                }
+            });
+            while (fields != null)
+            {
+                foreach (var f in fields)
+                {
+                    listAttributes.Items.Add(f.Name);
+                }
+                fields = null;
+            }
+        }
     }
 
 }
