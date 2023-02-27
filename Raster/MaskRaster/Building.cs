@@ -364,7 +364,7 @@ namespace MaskRaster
         public Dictionary<string, double> Depthmax; //alternative_ID -> Depthmax
         public Dictionary<string, double> Terrain; //alternative_ID -> Terrain
 
-        public Dictionary<string, DamageUSACE> Damage; //alternative_ID -> DamageUSACE ($)
+        public Dictionary<string, DamageUSACE> Damages; //alternative_ID -> DamageUSACE ($)
 
         //***** read once ****
         public double? latitude { get; set; }
@@ -476,6 +476,7 @@ namespace MaskRaster
             WSEmax = new Dictionary<string, double>();
             Depthmax = new Dictionary<string, double>();
             Terrain = new Dictionary<string, double>();
+            Damages = new Dictionary<string, DamageUSACE>();
         }
 
         

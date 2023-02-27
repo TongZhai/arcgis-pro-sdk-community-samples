@@ -12,6 +12,7 @@ using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Mapping;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Core.Internal.CIM;
+using ArcGIS.Desktop.Internal.Mapping;
 
 namespace MaskRaster
 {
@@ -36,6 +37,8 @@ namespace MaskRaster
         public static Dictionary<string, string> Dict_FloodBeforeMitigation;
         public static Dictionary<string, string> Dict_FloodAfterMitigation;
         public static Dictionary<string, string> Dict_CriticalFacilityInfo;
+
+        public static List<Building> Buildings_To_Add = new List<Building>();
 
         public static void Setup()
         {
@@ -2278,6 +2281,7 @@ namespace MaskRaster
             //var shapeFilePaths = System.IO.Directory.GetFiles(dir, "*.shp", System.IO.SearchOption.AllDirectories);
             await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(async () =>
             {
+                Buildings_To_Add.Clear();
                 foreach(var alt in alts)
                 {
                     if (string.IsNullOrEmpty(alt.FIA_Alternative))
@@ -2305,7 +2309,6 @@ namespace MaskRaster
                                     depth = Convert.ToDouble(record["DEPTH"]);
                                     /*
                                     string damage_cat_name = Convert.ToString(record["DMGCATNAME"]);
-                                    string occupance_type = Convert.ToString(record["OCCTYPNAME"]);
                                     string iarea_name = Convert.ToString(record["IAREANAME"]);
                                     double ContentDmg = Convert.ToDouble(record["CONTENTDMG"]);
                                     double CarDmg = Convert.ToDouble(record["CARDMG"]);
@@ -2318,32 +2321,61 @@ namespace MaskRaster
                                     var b = Buildings.Values.Where(bv => bv.BID == (int)struct_id).FirstOrDefault();
                                     if (b != null)
                                     {
-                                        var dmg = new DamageUSACE();
-                                        dmg.Depth = depth;
-                                        dmg.Struct = struct_dmg;
-                                        if (b.Damage == null)
+                                        if (!b.Damages.ContainsKey(alt.Name))
                                         {
-                                            b.Damage = new Dictionary<string, DamageUSACE>();
+                                            var dmg = new DamageUSACE();
+                                            dmg.Depth = depth;
+                                            dmg.Struct = struct_dmg;
+                                            b.Damages.Add(alt.Name, dmg);
                                         }
-                                        b.Damage.Add(alt.Name, dmg);
                                     }
                                     else
                                     {
-                                        //there is a problem here
-                                        throw new ApplicationException($"missing building: {struct_id} for alternative: {alt.Name}\nMight need to read the gridded output/buildings first.");
+                                        //there is a problem here, need to assemble a super set of buildings from the outset across all scenarios
+                                        //throw new ApplicationException($"missing building: {struct_id} for alternative: {alt.Name}\nMight need to read the gridded output/buildings first.");
+
+                                        //create it on the fly and read the other WSEmax data later
+                                        //but the lat-long won't be known
+                                        b = new Building();
+                                        b.BID = (int)struct_id;
+                                        b.OccupancyType = Convert.ToString(record["OCCTYPNAME"]);
+                                        var dmg = new DamageUSACE();
+                                        dmg.Depth = depth;
+                                        dmg.Struct = struct_dmg;
+                                        b.Damages.Add(alt.Name, dmg);
+                                        Buildings_To_Add.Add(b);
+
+                                        /*
+                                        var template_building = Buildings.Values.Where(bv => bv.OccupancyType == b.OccupancyType).FirstOrDefault();
+                                        if (template_building != null)
+                                        {
+                                            b.MitigationActionType = template_building.MitigationActionType;
+                                            b.StructureType = template_building.StructureType;
+                                            b.UseDefaultBuildingContentsValue = template_building.UseDefaultBuildingContentsValue;
+                                            b.UseDefaultBuildingReplacementValue = template_building.UseDefaultBuildingReplacementValue;
+                                            b.UseDefaultDemolitionThreshold = template_building.UseDefaultDemolitionThreshold;
+                                            b.UseDefaultLodgingPerDiem = template_building.UseDefaultLodgingPerDiem;
+                                            b.UseDefaultMonthlyCostOfTemporarySpace = template_building.UseDefaultMonthlyCostOfTemporarySpace;
+                                            b.UseDefaultOneTimeDisplacementCost = template_building.UseDefaultOneTimeDisplacementCost;
+                                            b.UseDefaultRecurrenceIntervals = template_building.UseDefaultRecurrenceIntervals;
+                                            b.UseDefaultYearsMaintenance = template_building.UseDefaultYearsMaintenance;
+                                        }
+                                        */
                                     }
                                 }
                             }
                         }
                     }
                 }
-
-
-
-    			
-                
+                if (Buildings_To_Add.Count > 0)
+                {
+                    System.Windows.MessageBox.Show($"Need to add {Buildings_To_Add.Count} buildings.");
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show($"Done reading building damages.");
+                }
             });
-
         }
     }
 }
