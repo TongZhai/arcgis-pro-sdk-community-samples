@@ -60,6 +60,7 @@ namespace MaskRaster
 				
 				XmlNodeList alt_list_block = xDoc.GetElementsByTagName("SMCAlternatives");
 				Alternative.basefolder = alt_list_block[0].Attributes["basefolder"].Value;
+				Alternative.basefolderfia = alt_list_block[0].Attributes["basefolderfia"].Value;
 				var lmethod = alt_list_block[0].Attributes["method"].Value;
 				switch(lmethod)
 				{
@@ -75,11 +76,13 @@ namespace MaskRaster
 				{
 					string alt_id = xalt.Attributes["id"].Value;
 					string alt_data_type = xalt.Attributes["type"].Value;
+					string alt_fia = xalt.Attributes.GetNamedItem("fia") != null? xalt.Attributes["fia"].Value : "";
 					string alt_path = xalt.ChildNodes[0].InnerText;
 					Alternative alt = alts.Where(a => a.Name == alt_id).FirstOrDefault();
 					if (alt == null)
 					{
 						alt = new Alternative(alt_id);
+						alt.FIA_Alternative = alt_fia;
 						alts.Add(alt);
 					}
 					switch (alt_data_type)

@@ -12,6 +12,7 @@ namespace MaskRaster
     public class Alternative
     {
         public static string basefolder;
+        public static string basefolderfia;
         public static READRASTERMETHOD method;
 
         /*
@@ -32,6 +33,7 @@ namespace MaskRaster
         public string PathWSEMAX { get; set; }
         public string PathDEPTHMAX { get; set; }
         public string PathTERRAIN { get; set; }
+        public string FIA_Alternative { get; set; }
         public RasterLayer WSEmax { get; set; }
         public RasterLayer Depthmax { get; set; }
         public RasterLayer DataLayer { get; set; }

@@ -48,6 +48,7 @@ namespace MaskRaster
             {
                 this.cboAlternatives.Items.Add(alt);
             }
+            txtFIAOutputDir.Text = Alternative.basefolderfia;
         }
 
         private void btnLoadGridLayers_Click(object sender, RoutedEventArgs e)
@@ -85,7 +86,7 @@ namespace MaskRaster
                 }
             }
             System.Windows.MessageBox.Show($"Number of layers added: {numLayersAdded}.");
-            this.Close();
+            //this.Close();
         }
 
         public Task<Layer> AddLayer(string uri)
@@ -210,6 +211,17 @@ namespace MaskRaster
                 }
                 fields = null;
             }
+        }
+
+        private void btnReadFIAOutputs_Click(object sender, RoutedEventArgs e)
+        {
+            if (!Directory.Exists(txtFIAOutputDir.Text)) 
+            {
+                System.Windows.MessageBox.Show($"Please specify the top level FIA analysis folder that contains the \\run folder.");
+                //txtFIAOutputDir.Focus();
+                return; 
+            }
+            BCA.ReadFIAOutputs(_Alternatives);
         }
     }
 

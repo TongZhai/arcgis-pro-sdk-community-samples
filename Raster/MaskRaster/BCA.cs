@@ -8,6 +8,10 @@ using Microsoft.Office.Interop.Excel;
 using System.Windows.Controls;
 using System.Runtime.CompilerServices;
 using ArcGIS.Desktop.Framework.Dialogs;
+using ArcGIS.Core.Data;
+using ArcGIS.Desktop.Mapping;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Core.Internal.CIM;
 
 namespace MaskRaster
 {
@@ -280,14 +284,14 @@ namespace MaskRaster
             double depth = 0;
             double? WSEmax500Yr = null;
             double? WSEmaxCurrent = null;
-            foreach(int b_key in Buildings.Keys)
+            foreach (int b_key in Buildings.Keys)
             {
                 depth = 0;
                 WSEmax500Yr = Buildings[b_key].WSEmax["500Yr_Current"];
                 WSEmaxCurrent = Buildings[b_key].Terrain[Buildings[b_key].Terrain.Keys.First()];
 
-                if (WSEmaxCurrent != null && WSEmax500Yr != null) 
-                { 
+                if (WSEmaxCurrent != null && WSEmax500Yr != null)
+                {
                     depth = WSEmax500Yr.Value - WSEmaxCurrent.Value;
                 }
                 if (depth > 0)
@@ -301,7 +305,7 @@ namespace MaskRaster
         {
             Dictionary<int, Building> l = new Dictionary<int, Building>();
             double? depthMax = 0;
-            foreach(int b_key in Buildings.Keys)
+            foreach (int b_key in Buildings.Keys)
             {
                 depthMax = Buildings[b_key].Depthmax["500Yr_Current"];
                 if (depthMax != null && depthMax > 0)
@@ -1845,7 +1849,7 @@ namespace MaskRaster
                         break;
                     case 10: //Water Surface Elevation 3 in feet
                         alt_key = "";
-                        datacomplete= true;
+                        datacomplete = true;
                         row = 0;
                         foreach (int bid in building_keys)
                         {   // for all structures
@@ -2091,7 +2095,7 @@ namespace MaskRaster
                             {
                                 myValues[row, 0] = "";
                             }
-                            row ++;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
@@ -2153,7 +2157,7 @@ namespace MaskRaster
                             {
                                 myValues[row, 0] = distance.ToString();
                             }
-                            row ++;
+                            row++;
                         }
                         FillColumnRiverineFlood(worksheet, column, myValues);
                         break;
@@ -2261,13 +2265,85 @@ namespace MaskRaster
             }
         }
 
-
         public static void FillColumnRiverineFlood(Worksheet worksheet, int column, string[,] data)
         {
             var keys = Buildings.Keys.ToArray();
             var startCell = worksheet.Cells[2, column];
             var endCell = worksheet.Cells[2 + keys.Length - 1, column];
             worksheet.Range[startCell, endCell] = data;
+        }
+
+        public static async void ReadFIAOutputs(List<Alternative> alts)
+        {
+            //var shapeFilePaths = System.IO.Directory.GetFiles(dir, "*.shp", System.IO.SearchOption.AllDirectories);
+            await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(async () =>
+            {
+                foreach(var alt in alts)
+                {
+                    if (string.IsNullOrEmpty(alt.FIA_Alternative))
+                    {
+                        continue;
+                    }
+                    double struct_id = 0.0;
+                    double struct_dmg = 0.0;
+                    double depth = 0.0;
+                    var fia_dam = System.IO.Path.Combine(Alternative.basefolderfia, System.IO.Path.Combine(alt.FIA_Alternative, "EconResults.shp"));
+                    FileSystemConnectionPath fileConnection = new FileSystemConnectionPath(new Uri(System.IO.Path.GetDirectoryName(fia_dam)), FileSystemDatastoreType.Shapefile);
+                    using (FileSystemDatastore shapefile = new FileSystemDatastore(fileConnection))
+                    {
+                        FeatureClass econResultsFeatureClass = shapefile.OpenDataset<FeatureClass>("EconResults.shp"); // Can use the .shp extension, but its not needed.
+                        Table econResultsFeatureClassTable = shapefile.OpenDataset<Table>("EconResults.dbf");
+                        using (var rc = econResultsFeatureClassTable.Search())
+                        {
+                            while (rc.MoveNext())
+                            {
+                                using (var record = rc.Current)
+                                {
+                                    //var flds = record.GetFields();
+                                    struct_id = Convert.ToDouble(record["STRUCTNAME"]);
+                                    struct_dmg = Convert.ToDouble(record["STRUCTDMG"]);
+                                    depth = Convert.ToDouble(record["DEPTH"]);
+                                    /*
+                                    string damage_cat_name = Convert.ToString(record["DMGCATNAME"]);
+                                    string occupance_type = Convert.ToString(record["OCCTYPNAME"]);
+                                    string iarea_name = Convert.ToString(record["IAREANAME"]);
+                                    double ContentDmg = Convert.ToDouble(record["CONTENTDMG"]);
+                                    double CarDmg = Convert.ToDouble(record["CARDMG"]);
+                                    double OtherDmg = Convert.ToDouble(record["OTHERDMG"]);
+                                    double ParDU65 = Convert.ToDouble(record["PARDU65"]);
+                                    double ParNU65 = Convert.ToDouble(record["PARNU65"]);
+                                    double ParDO65 = Convert.ToDouble(record["PARDO65"]);
+                                    double ParNO65 = Convert.ToDouble(record["PARNO65"]);
+                                    */
+                                    var b = Buildings.Values.Where(bv => bv.BID == (int)struct_id).FirstOrDefault();
+                                    if (b != null)
+                                    {
+                                        var dmg = new DamageUSACE();
+                                        dmg.Depth = depth;
+                                        dmg.Struct = struct_dmg;
+                                        if (b.Damage == null)
+                                        {
+                                            b.Damage = new Dictionary<string, DamageUSACE>();
+                                        }
+                                        b.Damage.Add(alt.Name, dmg);
+                                    }
+                                    else
+                                    {
+                                        //there is a problem here
+                                        throw new ApplicationException($"missing building: {struct_id} for alternative: {alt.Name}\nMight need to read the gridded output/buildings first.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+    			
+                
+            });
+
         }
     }
 }
