@@ -27,6 +27,7 @@ using ArcGIS.Core.Data;
 using System.IO;
 using ArcGIS.Desktop.Core;
 using System.Windows.Media.Animation;
+using ArcGIS.Core.Internal.Geometry;
 
 namespace MaskRaster
 {
@@ -420,6 +421,14 @@ namespace MaskRaster
                         Raster inputRaster = (firstSelectedLayer as RasterLayer).GetRaster();
                         // Get the basic raster dataset from the raster.
                         BasicRasterDataset basicRasterDataset = inputRaster.GetRasterDataset();
+                        // If the map spatial reference is different from the spatial reference of the input raster,
+                        // set the map spatial reference on the input raster. This will ensure the map points are 
+                        // correctly reprojected to image points.
+                        if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
+                            inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
+
+                        // reproject the raster envelope to match the map spatial reference
+                        var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
                         #endregion
 
                         //get the matching alternative
@@ -429,12 +438,6 @@ namespace MaskRaster
                             //if the alt associated with a raster data layer is present, i.e. there is no alt that has that raster data layer
                             #region read raster values
 
-                            // If the map spatial reference is different from the spatial reference of the input raster,
-                            // set the map spatial reference on the input raster. This will ensure the map points are 
-                            // correctly reprojected to image points.
-
-                            if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
-                                inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
 
                             Building b;
                             FeatureClass featfp = footprintLayer.GetFeatureClass();
@@ -447,6 +450,12 @@ namespace MaskRaster
                                     {
                                         Feature f = record as Feature;
                                         Geometry shape = f.GetShape();
+                                        ReadOnlyPointCollection shape_vertices = null;
+                                        if (shape.GeometryType == GeometryType.Polygon && Alternative.evalmethod == EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND)
+                                        {
+                                            var polygon = shape as Polygon;
+                                            shape_vertices = polygon.Points;
+                                        }
 
                                         int buildingid = Convert.ToInt32(record["BID"]);
                                         if (!BCA.Buildings.ContainsKey(buildingid))
@@ -485,39 +494,50 @@ namespace MaskRaster
 
                                         if (!readAlready)
                                         {
-                                            int pixelBlockWidth = Convert.ToInt32(shape.Extent.XMax - shape.Extent.XMin);
-                                            int pixelBlockHeight = Convert.ToInt32(shape.Extent.YMax - shape.Extent.YMin);
-
-                                            RasterBand rb = inputRaster.GetBand(0);
-
                                             //Method 2: read raster data by a point with fixed window
                                             // create a pixelblock representing a 3x3 window to hold the raster values
                                             var pixelBlock = inputRaster.CreatePixelBlock(3, 3);
                                             var shape_ctrpt = shape.Extent.CenterCoordinate.ToMapPoint();
 
-                                            // create a container to hold the pixel values
-                                            Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
-
-                                            // reproject the raster envelope to match the map spatial reference
-                                            var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
-
-                                            // if the cursor is within the extent of the raster
-                                            if (GeometryEngine.Instance.Contains(rasterEnvelope, shape_ctrpt))
+                                            var list_points = new List<MapPoint>();
+                                            if (shape_vertices != null && shape_vertices.Count > 0)
                                             {
-                                                // find the map location expressed in row,column of the raster
-                                                var pixelLocationAtRaster = inputRaster.MapToPixel(shape_ctrpt.X, shape_ctrpt.Y);
-
-                                                // fill the pixelblock with the pointer location
-                                                inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
-
-                                                // retrieve the actual pixel values from the pixelblock representing the red raster band
-                                                pixelArray = pixelBlock.GetPixelData(_bandindex, false);
-
+                                                foreach(var sv in shape_vertices)
+                                                {
+                                                    list_points.Add(sv.Extent.CenterCoordinate.ToMapPoint());
+                                                }
                                             }
                                             else
                                             {
-                                                // fill the container with 0s
-                                                Array.Clear(pixelArray, 0, pixelArray.Length);
+                                                list_points.Add(shape_ctrpt);
+                                            }
+
+                                            var list_array = new List<Array>();
+                                            foreach (var pt in list_points)
+                                            {
+                                                // create a container to hold the pixel values
+                                                Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
+    
+                                                // if the cursor is within the extent of the raster
+                                                if (GeometryEngine.Instance.Contains(rasterEnvelope, pt))
+                                                {
+                                                    // find the map location expressed in row,column of the raster
+                                                    var pixelLocationAtRaster = inputRaster.MapToPixel(pt.X, pt.Y);
+    
+                                                    // fill the pixelblock with the pointer location
+                                                    // -2, -2, then read at index=4, will read 1 grid cell away from the vertices
+                                                    inputRaster.Read(pixelLocationAtRaster.Item1 - 2, pixelLocationAtRaster.Item2 - 2, pixelBlock);
+    
+                                                    // retrieve the actual pixel values from the pixelblock representing the red raster band
+                                                    pixelArray = pixelBlock.GetPixelData(_bandindex, false);
+                                                }
+                                                else
+                                                {
+                                                    // fill the container with 0s
+                                                    Array.Clear(pixelArray, 0, pixelArray.Length);
+                                                }
+
+                                                list_array.Add(pixelArray);
                                             }
 
                                             double ras_val = 0;
@@ -526,44 +546,68 @@ namespace MaskRaster
                                             int ind = 0;
                                             int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
                                                                  //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
-                                            foreach (float v in pixelArray)
+                                            var list_values = new List<double>();
+                                            foreach(var pt_pixelArray in list_array)
                                             {
-                                                if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
+                                                ind = 0;
+                                                foreach (float v in pt_pixelArray)
                                                 {
-                                                    if (ind == centerIndex)
+                                                    if (v < 0) { }
+                                                    else { list_values.Add(v); }
+
+                                                    if (Alternative.readmethod == EREADRASTERMETHOD.POINTDIRECT)
                                                     {
-                                                        ras_val = v;
-                                                        break;
+                                                        if (ind == centerIndex)
+                                                        {
+                                                            if (ras_val < 0)
+                                                            {
+                                                                // skip points outside of flood water
+                                                            }
+                                                            else
+                                                            {
+                                                                ras_val += v;
+                                                                num++;
+                                                            }
+                                                            break;
+                                                        }
                                                     }
-                                                }
-                                                else
-                                                {
-                                                    if (v >= 0)
+                                                    else
                                                     {
-                                                        ras_val += v;
-                                                        num++;
+                                                        // skip points outside of flood water
+                                                        if (v >= 0)
+                                                        {
+                                                            ras_val += v;
+                                                            num++;
+                                                        }
                                                     }
+                                                    ind++;
                                                 }
-                                                ind++;
                                             }
-                                            if (Alternative.method == READRASTERMETHOD.POINTDIRECT)
+
+                                            if (num > 0)
                                             {
-                                                if (ras_val < 0)
-                                                {
-                                                    ras_val = -9999;
-                                                }
+                                                ras_val /= num;
                                             }
                                             else
                                             {
-                                                if (num > 0)
-                                                {
-                                                    ras_val = ras_val / num;
-                                                }
-                                                else
-                                                {
-                                                    ras_val = -9999;
-                                                }
+                                                ras_val = -9999;
                                             }
+
+                                            //record depth values, later on used for statistics
+                                            if (!b.DepthmaxStatistics.ContainsKey(alt.Name))
+                                            {
+                                                b.DepthmaxStatistics.Add(alt.Name, new BCAMATH());
+                                            }
+                                            b.DepthmaxStatistics[alt.Name].SetData(list_values);
+
+                                            //clean up
+                                            foreach(var pt_pixelArray in list_array)
+                                            {
+                                                Array.Clear(pt_pixelArray, 0, pt_pixelArray.Length);
+                                            }
+                                            list_array.Clear();
+                                            list_points.Clear();
+                                            list_values.Clear();
 
                                             //record result
                                             if (b.latitude == null || b.longitude == null)

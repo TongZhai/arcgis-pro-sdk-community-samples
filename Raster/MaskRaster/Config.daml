@@ -49,7 +49,7 @@ limitations under the License.
       </controls>
     </insertModule>
   </modules>
-  <SMCAlternatives id="Alternatives" method="POINTDIRECT" basefolder="C:\Data\SixMileCreek\RAS_Alt_Refined" basefolderfia ="C:\Data\SixMileCreek\FIA_Brookings\runs">
+  <SMCAlternatives id="Alternatives" readmethod="BLOCKAVERAGE" floodevalmethod="STRUCTURESURROUND"  basefolder="C:\Data\SixMileCreek\RAS_Alt_Refined" basefolderfia ="C:\Data\SixMileCreek\FIA_Brookings\runs">
     <Alternative type="WSEMAX" id="10Yr_Current" fia="10YrCurrent\10YrCurrent\10YrCurrent\TW100yrRain">10PCT\WSE (Max) Current 10PCT.vrt</Alternative>
     <Alternative type="WSEMAX" id="50Yr_Current" fia="50YrCurrent\50YrCurrent\50YrCurrent\TW100yrRain">2PCT\WSE (Max) Current 2PCT.vrt</Alternative>
     <Alternative type="WSEMAX" id="100Yr_Current" fia="100yr\100yr\100yr Current\TW100yrRain">6_Mile_refined\WSE (Max) Current 100Yr.vrt</Alternative>

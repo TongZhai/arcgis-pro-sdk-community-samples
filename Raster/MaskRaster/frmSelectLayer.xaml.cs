@@ -167,6 +167,20 @@ namespace MaskRaster
 
         private void btnSetupBCAInputs_Click(object sender, RoutedEventArgs e)
         {
+            /*
+            foreach(var b in BCA.Buildings.Values)
+            {
+                foreach(var alt in _Alternatives)
+                {
+                    var min = b.DepthmaxStatistics[alt.Name].Min();
+                    var max = b.DepthmaxStatistics[alt.Name].Max();
+                    var mean = b.DepthmaxStatistics[alt.Name].Mean();
+                    var median = b.DepthmaxStatistics[alt.Name].Median();
+                    var std = b.DepthmaxStatistics[alt.Name].StandardDeviation();
+                    var pct90 = b.DepthmaxStatistics[alt.Name].Percentile(90);
+                }
+            }
+            */
             BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
             BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
         }

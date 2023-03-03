@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using MapWinUtility;
+using atcData;
 
 namespace MaskRaster
 {
@@ -16,10 +18,15 @@ namespace MaskRaster
 		DEPTHMAX
 	}
 
-	public enum READRASTERMETHOD
+	public enum EREADRASTERMETHOD
 	{
 		POINTDIRECT,
 		BLOCKAVERAGE
+	}
+	public enum EINUNDATIONEVALUATIONLOCATION
+	{
+        STRUCTURECENTER,
+        STRUCTURESURROUND,
 	}
 
     internal class Util
@@ -48,6 +55,9 @@ namespace MaskRaster
 		/// <returns>tuple: version, desktopVersion</returns>
 		public static List<Alternative> GetConfigDamlSMCAlternatives()
 		{
+			// just test to see if loading problem
+			//MapWinUtility.Log l = new MapWinUtility.Log();
+
 			XmlDocument xDoc = new XmlDocument();
 			try
 			{
@@ -61,14 +71,24 @@ namespace MaskRaster
 				XmlNodeList alt_list_block = xDoc.GetElementsByTagName("SMCAlternatives");
 				Alternative.basefolder = alt_list_block[0].Attributes["basefolder"].Value;
 				Alternative.basefolderfia = alt_list_block[0].Attributes["basefolderfia"].Value;
-				var lmethod = alt_list_block[0].Attributes["method"].Value;
+				var lmethod = alt_list_block[0].Attributes["readmethod"].Value;
 				switch(lmethod)
 				{
-					case nameof(READRASTERMETHOD.POINTDIRECT):
-						Alternative.method = READRASTERMETHOD.POINTDIRECT;
+					case nameof(EREADRASTERMETHOD.POINTDIRECT):
+						Alternative.readmethod = EREADRASTERMETHOD.POINTDIRECT;
 						break;
-					case nameof(READRASTERMETHOD.BLOCKAVERAGE):
-						Alternative.method = READRASTERMETHOD.BLOCKAVERAGE;
+					case nameof(EREADRASTERMETHOD.BLOCKAVERAGE):
+						Alternative.readmethod = EREADRASTERMETHOD.BLOCKAVERAGE;
+						break;
+				}
+				lmethod = alt_list_block[0].Attributes["floodevalmethod"].Value;
+				switch(lmethod)
+				{
+					case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER):
+						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER;
+						break;
+					case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND):
+						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND;
 						break;
 				}
 				List<Alternative> alts = new List<Alternative>();
@@ -113,6 +133,29 @@ namespace MaskRaster
 
 		}
 
-
+		public static bool LoadDataSourcePlugins()
+        {
+            try
+            {
+                if (atcDataManager.DataSources is null)
+                    atcDataManager.Clear();
+                if (atcDataManager.DataPlugins.Count > 0)
+                    return true;
+                var att = new atcDataAttributes();
+                atcTimeseriesStatistics.atcTimeseriesStatistics.InitializeShared();
+				var stat = new atcTimeseriesStatistics.atcTimeseriesStatistics();
+                var TSMath = new atcTimeseriesMath.atcTimeseriesMath();
+				foreach (var attr in TSMath.AvailableOperations)
+				{
+					string key = attr.Definition.Name;
+				}
+                return true;
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.Print(e.InnerException.Message);
+                return false;
+            }
+        }
     }
 }

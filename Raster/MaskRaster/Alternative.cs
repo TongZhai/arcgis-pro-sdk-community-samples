@@ -13,7 +13,8 @@ namespace MaskRaster
     {
         public static string basefolder;
         public static string basefolderfia;
-        public static READRASTERMETHOD method;
+        public static EREADRASTERMETHOD readmethod;
+        public static EINUNDATIONEVALUATIONLOCATION evalmethod;
 
         /*
         public static SortedDictionary<int, (double, double)> BuildingLatLong {get; set;}
