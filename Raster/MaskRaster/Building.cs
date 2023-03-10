@@ -191,6 +191,7 @@ namespace MaskRaster
         Residential,
         Runway,
         School,
+        Unknown,
     }
 
     public enum EBuildingUseNonResidential
@@ -365,14 +366,15 @@ namespace MaskRaster
         public Dictionary<string, double> Terrain; //alternative_ID -> Terrain
 
         public Dictionary<string, DamageUSACE> Damages; //alternative_ID -> DamageUSACE ($)
-        public Dictionary<string, IMath> DepthmaxStatistics; //alternative_ID-> IMath
+        public Dictionary<string, IMath> BCADepthmaxStatistics; //alternative_ID-> IMath
 
         //***** read once ****
         public double? latitude { get; set; }
         public double? longitude { get; set; }
         public double? FirstFloorAreaSqFt; // non-residential and critical structure; single story = footprint of building
-        public string OccupancyType { get; set; }
+        public string OccupancyType { get; set; } //this is the raw building type or occupancy type per local government designation
         public string Address { get; set; }
+        public string ParcelID { get; set; }
         //***** read once ****
 
         public EBuildingOutside100YearFloodAreaNonResidentialCriticalFacility BuildingOutside100YearFloodAreaNonResidentialOnly; // Yes/No, for non-residential building only, determine displacement duration
@@ -478,7 +480,7 @@ namespace MaskRaster
             Depthmax = new Dictionary<string, double>();
             Terrain = new Dictionary<string, double>();
             Damages = new Dictionary<string, DamageUSACE>();
-            DepthmaxStatistics = new Dictionary<string, IMath>();
+            BCADepthmaxStatistics = new Dictionary<string, IMath>();
         }
 
         

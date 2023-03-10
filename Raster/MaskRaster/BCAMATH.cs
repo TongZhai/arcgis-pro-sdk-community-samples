@@ -14,31 +14,51 @@ namespace MaskRaster
 
         public override List<double> GetData()
         {
-                if (depths != null)
-                {
-                    return depths.Values.ToList();
-                }
-                return dataset;
+            if (depths != null)
+            {
+                return depths.Values.ToList();
+            }
+            return dataset;
         }
 
-        public override void SetData(List<double> data)
+        /***
+         * Set the series of data, with the ability to append (i.e., append)
+         ***/
+        public override void SetData(List<double> data, bool append = false)
         {
-                depths = new atcData.atcTimeseries();
-            if (data.Count > 1)
+            dataset = new List<double>();
+            if (append)
             {
-                depths.numValues = data.Count - 1;
-                for(int i = 0; i <= depths.numValues ; i++)
+                // if append, then preserve the existing set of values
+                if (depths != null && depths.numValues > 0)
                 {
-                    depths.Values[i] = data[i];
+                    dataset.AddRange(depths.Values);
                 }
             }
-            else if (data.Count == 1)
+            dataset.AddRange(data);
+
+            if (depths != null)
+            {
+                //free up memory
+                depths.Clear();
+            }
+            depths = new atcData.atcTimeseries();
+
+            if (dataset.Count > 1)
+            {
+                depths.numValues = dataset.Count - 1;
+                for (int i = 0; i <= depths.numValues; i++)
+                {
+                    depths.Values[i] = dataset[i];
+                }
+            }
+            else if (dataset.Count == 1)
             {
                 depths.numValues = 1;
-                depths.Values[0] = data[0];
+                depths.Values[0] = dataset[0];
                 depths.Values[1] = double.NaN;
             }
-                
+
         }
 
         public override double Min()
@@ -58,7 +78,7 @@ namespace MaskRaster
 
         public override double Median()
         {
-            return GetData().OrderBy(x => x).Skip(GetData().Count/2).First();
+            return GetData().OrderBy(x => x).Skip(GetData().Count / 2).First();
         }
 
         public override double Percentile(double x)
@@ -86,6 +106,20 @@ namespace MaskRaster
             catch
             {
                 return double.NaN;
+            }
+        }
+
+        public void Clear()
+        {
+            if (depths != null)
+            {
+                depths.numValues = 0;
+                depths.Clear();
+            }
+
+            if (dataset != null)
+            {
+                dataset.Clear();
             }
         }
     }

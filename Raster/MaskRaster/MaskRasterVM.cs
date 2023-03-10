@@ -594,11 +594,11 @@ namespace MaskRaster
                                             }
 
                                             //record depth values, later on used for statistics
-                                            if (!b.DepthmaxStatistics.ContainsKey(alt.Name))
+                                            if (!b.BCADepthmaxStatistics.ContainsKey(alt.Name))
                                             {
-                                                b.DepthmaxStatistics.Add(alt.Name, new BCAMATH());
+                                                b.BCADepthmaxStatistics.Add(alt.Name, new BCAMATH());
                                             }
-                                            b.DepthmaxStatistics[alt.Name].SetData(list_values);
+                                            b.BCADepthmaxStatistics[alt.Name].SetData(list_values);
 
                                             //clean up
                                             foreach(var pt_pixelArray in list_array)
@@ -632,11 +632,31 @@ namespace MaskRaster
                                                 double buildingfootprintsqft = Convert.ToDouble(record["Shape_Area"]);
                                                 string buildingtype = Convert.ToString(record["BType"]);
                                                 string location = Convert.ToString(record["location"]);
+                                                string parcel_id = Convert.ToString(record["Parcel_ID"]);
+                                                string parcel_hyp = Convert.ToString(record["Parcel_Hyp"]);
                                                 b.latitude = latitude;
                                                 b.longitude = longitude;
                                                 b.FirstFloorAreaSqFt = buildingfootprintsqft;
                                                 b.OccupancyType = buildingtype;
                                                 b.Address = location;
+                                                if (!string.IsNullOrEmpty(parcel_id))
+                                                {
+                                                    b.ParcelID = parcel_id;
+                                                }
+                                                else
+                                                {
+                                                    if (!string.IsNullOrEmpty(parcel_hyp))
+                                                    {
+                                                        b.ParcelID = parcel_hyp.Replace("-", "");
+                                                    }
+                                                }
+
+                                                Parcel p = BCA.Parcels.Where(pc => pc.ParcelID == b.ParcelID).FirstOrDefault();
+                                                if (p == null)
+                                                {
+                                                    p = new Parcel(b.ParcelID);
+                                                }
+                                                p.AddBuilding(b);
                                             }
                                             if (gridDataType == GridDataType.WSEMAX)
                                             {

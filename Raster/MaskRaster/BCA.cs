@@ -27,6 +27,7 @@ namespace MaskRaster
         public static Workbook BCAWorkbook = null;
 
         public static Dictionary<int, Building> Buildings = new Dictionary<int, Building>();
+        public static List<Parcel> Parcels = new List<Parcel>();
 
         public static System.Data.DataTable Tab_RiverineFlood;
         public static System.Data.DataTable Tab_FloodBeforeMitigation;
