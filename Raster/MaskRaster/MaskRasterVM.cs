@@ -370,6 +370,94 @@ namespace MaskRaster
             }
         }
 
+        //this only works for polygons
+        public static List<MapPoint> GetPolygonSegmentOffsetPoints(Geometry shape)
+        {
+            List<MapPoint> list = new List<MapPoint>();
+            var polygon = shape as Polygon;
+            var shape_centroid = shape.Extent.CenterCoordinate.ToMapPoint();
+            double buf_dist = 3.5;
+            double slope;
+            double xdiff;
+            double ydiff;
+            double angle;
+            MapPoint mp;
+            for (int i = 0; i < polygon.Points.Count - 1; i++)
+            {
+                var p1 = polygon.Points[i];
+                var p2 = polygon.Points[i + 1];
+                var ctrpt = MapPointBuilderEx.CreateMapPoint((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
+
+                slope = 0;
+                angle = 0;
+                xdiff = 0;
+                ydiff = 0;
+                if (Math.Abs(p2.X - p1.X) > 1e-4)
+                {
+                    slope = (p2.Y - p1.Y) / (p2.X - p1.X); //slope could be zero here
+                    angle = Math.Atan(Math.Abs(p1.Y - p2.Y) / Math.Abs(p1.X - p2.X));
+                    xdiff = Math.Sin(angle) * buf_dist;
+                    ydiff = Math.Cos(angle) * buf_dist;
+                }
+                else
+                {
+                    slope = double.NaN;
+                }
+
+                
+                if (slope > 0 && Math.Abs(slope) > 1e-4)
+                {
+                    mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y + ydiff);
+                    if (GeometryEngine.Instance.Intersects(shape, mp))
+                    {
+                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X + xdiff, ctrpt.Y - ydiff));
+                    }
+                    else
+                    {
+                        list.Add(mp);
+                    }
+                }
+                else if (slope < 0 && Math.Abs(slope) > 1e-4)
+                {
+                    mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X + xdiff, ctrpt.Y + ydiff);
+                    if (GeometryEngine.Instance.Intersects(shape, mp))
+                    {
+                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y - ydiff));
+                    } 
+                    else
+                    {
+                        list.Add(mp);
+                    }
+                }
+                else if (double.IsNaN(slope))
+                {
+                    //vertical line
+                    if (ctrpt.X < shape_centroid.X)
+                    {
+                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X - buf_dist, ctrpt.Y));
+                    }
+                    else if (ctrpt.X > shape_centroid.X)
+                    {
+                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X + buf_dist, ctrpt.Y));
+                    }
+                }
+                else //if (slope == 0)
+                {
+                    //horizontal line
+                    if (ctrpt.Y < shape_centroid.Y)
+                    {
+                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X, ctrpt.Y - buf_dist));
+                    }
+                    else if (ctrpt.Y > shape_centroid.Y)
+                    {
+                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X, ctrpt.Y + buf_dist));
+                    }
+                }
+            }
+
+            return list;
+        }
+
         /// <summary>
         /// Read raster pixels values per building footprint, based on the building footprint geometries,
         /// collate and output into textfile in user specified folder
@@ -455,6 +543,7 @@ namespace MaskRaster
                                         {
                                             var polygon = shape as Polygon;
                                             shape_vertices = polygon.Points;
+                                            var lm = GetPolygonSegmentOffsetPoints(shape);
                                         }
 
                                         int buildingid = Convert.ToInt32(record["BID"]);
@@ -521,12 +610,36 @@ namespace MaskRaster
                                                 // if the cursor is within the extent of the raster
                                                 if (GeometryEngine.Instance.Contains(rasterEnvelope, pt))
                                                 {
+
+
+
+                                                    Coordinate2D p2d = new Coordinate2D(pt);
+                                                    p2d.GetPerpendicular(true);
+
                                                     // find the map location expressed in row,column of the raster
                                                     var pixelLocationAtRaster = inputRaster.MapToPixel(pt.X, pt.Y);
-    
+
+                                                    var (mapPtTupleX, mapPtTupleY) = inputRaster.PixelToMap(pixelLocationAtRaster.Item1 - 2, pixelLocationAtRaster.Item2 - 2 );
+                                                    var mapPt = MapPointBuilderEx.CreateMapPoint(mapPtTupleX, mapPtTupleY);
+                                                    bool insidePolygon = GeometryEngine.Instance.Intersects(shape, mapPt);
                                                     // fill the pixelblock with the pointer location
-                                                    // -2, -2, then read at index=4, will read 1 grid cell away from the vertices
-                                                    inputRaster.Read(pixelLocationAtRaster.Item1 - 2, pixelLocationAtRaster.Item2 - 2, pixelBlock);
+                                                    // (-2, -2) then read at index=4, will read 1 grid cell away from the vertices
+                                                    // (+2, +2) then read at index=4, will read 1 grid cell away from the vertices
+                                                    if (insidePolygon)
+                                                    {
+                                                        inputRaster.Read(pixelLocationAtRaster.Item1 + 2, pixelLocationAtRaster.Item2 + 2, pixelBlock);
+                                                        (mapPtTupleX, mapPtTupleY) = inputRaster.PixelToMap(pixelLocationAtRaster.Item1 + 2, pixelLocationAtRaster.Item2 + 2 );
+                                                        mapPt = MapPointBuilderEx.CreateMapPoint(mapPtTupleX, mapPtTupleY);
+                                                        insidePolygon = GeometryEngine.Instance.Intersects(shape, mapPt);
+                                                        if (insidePolygon)
+                                                        {
+                                                            string stop = "now";
+                                                        }
+                                                    } 
+                                                    else
+                                                    {
+                                                        inputRaster.Read(pixelLocationAtRaster.Item1 - 2, pixelLocationAtRaster.Item2 - 2, pixelBlock);
+                                                    }
     
                                                     // retrieve the actual pixel values from the pixelblock representing the red raster band
                                                     pixelArray = pixelBlock.GetPixelData(_bandindex, false);
@@ -655,6 +768,7 @@ namespace MaskRaster
                                                 if (p == null)
                                                 {
                                                     p = new Parcel(b.ParcelID);
+                                                    BCA.Parcels.Add(p);
                                                 }
                                                 p.AddBuilding(b);
                                             }

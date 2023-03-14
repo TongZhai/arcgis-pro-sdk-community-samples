@@ -35,7 +35,8 @@ namespace MaskRaster
                     dataset.AddRange(depths.Values);
                 }
             }
-            dataset.AddRange(data);
+            //screen out negative or nodata values from new data values
+            dataset.AddRange(data.Where(d => !(d < 0 || double.IsNaN(d))));
 
             if (depths != null)
             {

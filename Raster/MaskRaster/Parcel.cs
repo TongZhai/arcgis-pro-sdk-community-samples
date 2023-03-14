@@ -73,74 +73,80 @@ namespace MaskRaster
 
         private void TallyBuildingTypes()
         {
-            var BuildingTypeBrookings = new Dictionary<EBuildingTypeBrookings, int>();
+            var BuildingTypeBrookings = new Dictionary<string, int>();
             foreach (var building in Buildings)
             {
-                var ot = building.OccupancyType;
-                if (ot.StartsWith("Mobi"))
+                if (BuildingTypeBrookings.ContainsKey(building.OccupancyType))
                 {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Mobile]++;
-                }
-                else if (ot.StartsWith("Res"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Residential]++;
-                }
-                else if (ot.StartsWith("Apart"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Apartment]++;
-                }
-                else if (ot.StartsWith("Deta"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Detached]++;
-                }
-                else if (ot.StartsWith("Comm"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Commercial]++;
-                }
-                else if (ot.StartsWith("Muni"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Municipal]++;
-                }
-                else if (ot.StartsWith("Runw"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Runway]++;
-                }
-                else if (ot.StartsWith("Fire"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Fire]++;
-                }
-                else if (ot.StartsWith("Police"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Police]++;
-                }
-                else if (ot.StartsWith("Heal"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Health]++;
-                }
-                else if (ot.StartsWith("Ind"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Industrial]++;
-                }
-                else if (ot.StartsWith("Rec"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Recreation]++;
-                }
-                else if (ot.StartsWith("Lib"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Library]++;
-                }
-                else if (ot.StartsWith("Schoo"))
-                {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.School]++;
+                    BuildingTypeBrookings[building.OccupancyType]++;
                 }
                 else
                 {
-                    BuildingTypeBrookings[EBuildingTypeBrookings.Unknown]++;
+                    BuildingTypeBrookings.Add(building.OccupancyType, 1);
                 }
             }
-
             var sortedDict = from entry in BuildingTypeBrookings orderby entry.Value descending select entry;
-            PropertyType = sortedDict.First().Key; // most popular property type
+            string ot = sortedDict.First().Key; // most popular property type
+            if (ot.StartsWith("Mobi"))
+            {
+                PropertyType = EBuildingTypeBrookings.Mobile;
+            }
+            else if (ot.StartsWith("Res"))
+            {
+                PropertyType = EBuildingTypeBrookings.Residential;
+            }
+            else if (ot.StartsWith("Apart"))
+            {
+                PropertyType = EBuildingTypeBrookings.Apartment;
+            }
+            else if (ot.StartsWith("Deta"))
+            {
+                PropertyType = EBuildingTypeBrookings.Detached;
+            }
+            else if (ot.StartsWith("Comm"))
+            {
+                PropertyType = EBuildingTypeBrookings.Commercial;
+            }
+            else if (ot.StartsWith("Muni"))
+            {
+                PropertyType = EBuildingTypeBrookings.Municipal;
+            }
+            else if (ot.StartsWith("Runw"))
+            {
+                PropertyType = EBuildingTypeBrookings.Runway;
+            }
+            else if (ot.StartsWith("Fire"))
+            {
+                PropertyType = EBuildingTypeBrookings.Fire;
+            }
+            else if (ot.StartsWith("Police"))
+            {
+                PropertyType = EBuildingTypeBrookings.Police;
+            }
+            else if (ot.StartsWith("Heal"))
+            {
+                PropertyType = EBuildingTypeBrookings.Health;
+            }
+            else if (ot.StartsWith("Ind"))
+            {
+                PropertyType = EBuildingTypeBrookings.Industrial;
+            }
+            else if (ot.StartsWith("Rec"))
+            {
+                PropertyType = EBuildingTypeBrookings.Recreation;
+            }
+            else if (ot.StartsWith("Lib"))
+            {
+                PropertyType = EBuildingTypeBrookings.Library;
+            }
+            else if (ot.StartsWith("Schoo"))
+            {
+                PropertyType = EBuildingTypeBrookings.School;
+            }
+            else
+            {
+                PropertyType = EBuildingTypeBrookings.Unknown;
+            }
         }
     }
 }
