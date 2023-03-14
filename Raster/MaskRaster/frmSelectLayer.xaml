@@ -25,7 +25,8 @@
         <TextBox x:Name="txtBCARiverineFloodTemplateFilePath" HorizontalAlignment="Left" Margin="185,192,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="453" Height="22"/>
         <Label x:Name="lblBCATemplate" Content="BCA Riverine Flood Template:" HorizontalAlignment="Left" Margin="15,188,0,0" VerticalAlignment="Top"/>
         <Button x:Name="btnBrowseBCATemplate" Content="Browse" HorizontalAlignment="Left" Margin="651,193,0,0" VerticalAlignment="Top" Width="129" Click="btnBrowseBCATemplate_Click"/>
-        <Button x:Name="btnSetupBCAInputs" Content="Write BCA Inputs" HorizontalAlignment="Left" Margin="80,270,0,0" VerticalAlignment="Top" Click="btnSetupBCAInputs_Click" Grid.RowSpan="2"/>
+        <Button x:Name="btnSetupBCAInputsv5" Content="Write Riverine Flood Input v5" HorizontalAlignment="Left" Margin="10,270,0,0" VerticalAlignment="Top" Click="btnSetupBCAInputsv5_Click"/>
+        <Button x:Name="btnSetupBCAInputsv6" Content="Write Riverine Flood Input v6" HorizontalAlignment="Left" Margin="10,375,0,0" VerticalAlignment="Top" Click="btnSetupBCAInputsv6_Click" RenderTransformOrigin="0.523,3.359"/>
         <ProgressBar x:Name="BCAInputsProgress" HorizontalAlignment="Left" Height="20" Margin="185,270,0,0" VerticalAlignment="Top" Width="595" Grid.RowSpan="2"/>
         <Label x:Name="lblAlternatives" Content="Alternatives:" HorizontalAlignment="Left" Margin="105,219,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.036,-0.54"/>
         <ComboBox x:Name="cboAlternatives" HorizontalAlignment="Left" Margin="185,223,0,0" VerticalAlignment="Top" Width="334" RenderTransformOrigin="0.482,-0.398"/>

@@ -14,20 +14,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ArcGIS.Core.Geometry;
-using ArcGIS.Desktop.Mapping;
-using ArcGIS.Desktop.Framework;
-using ArcGIS.Desktop.Framework.Contracts;
-using ArcGIS.Desktop.Framework.Threading.Tasks;
-using ArcGIS.Core.Data.Raster;
-using ArcGIS.Desktop.Framework.Dialogs;
 using ArcGIS.Core.Data;
-using System.IO;
+using ArcGIS.Core.Data.Raster;
+using ArcGIS.Core.Geometry;
 using ArcGIS.Desktop.Core;
-using System.Windows.Media.Animation;
-using ArcGIS.Core.Internal.Geometry;
+using ArcGIS.Desktop.Mapping;
+using ArcGIS.Desktop.Framework.Threading.Tasks;
+using ArcGIS.Desktop.Framework.Dialogs;
+using System.IO;
 
 namespace MaskRaster
 {
@@ -370,13 +364,51 @@ namespace MaskRaster
             }
         }
 
+        /// <summary>
+        /// Performs a spatial query against a feature layer.
+        /// </summary>
+        /// <remarks>It is assumed that the feature layer and the search geometry are using the same spatial reference.</remarks>
+        /// <param name="searchLayer">The feature layer to be searched.</param>
+        /// <param name="searchGeometry">The geometry used to perform the spatial query.</param>
+        /// <param name="spatialRelationship">The spatial relationship used by the spatial filter.</param>
+        /// <returns>Cursor containing the features that satisfy the spatial search criteria.</returns>
+        public static bool Search(this BasicFeatureLayer searchLayer, Geometry searchGeometry, SpatialRelationship spatialRelationship)
+        {
+            RowCursor rowCursor = null;
+
+            // define a spatial query filter
+            var spatialQueryFilter = new SpatialQueryFilter
+            {
+                // passing the search geometry to the spatial filter
+                FilterGeometry = searchGeometry,
+                // define the spatial relationship between search geometry and feature class
+                SpatialRelationship = spatialRelationship
+            };
+
+            // apply the spatial filter to the feature layer in question
+            rowCursor = searchLayer.Search(spatialQueryFilter);
+            int featCount = 0;
+            if (rowCursor.MoveNext())
+            {
+                var row = rowCursor.Current;
+                //rowHandle = new RowHandle(row);
+                //featName = Convert.ToString(row["NAME"]);
+                featCount += 1;
+            }
+
+            searchLayer.ClearSelection(); //search set selection???
+            if (featCount > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
         //this only works for polygons
-        public static List<MapPoint> GetPolygonSegmentOffsetPoints(Geometry shape)
+        public static List<MapPoint> GetPolygonSegmentOffsetPoints(Geometry shape, FeatureLayer footprintLayer)
         {
             List<MapPoint> list = new List<MapPoint>();
             var polygon = shape as Polygon;
-            var shape_centroid = shape.Extent.CenterCoordinate.ToMapPoint();
-            double buf_dist = 3.5;
             double slope;
             double xdiff;
             double ydiff;
@@ -396,8 +428,8 @@ namespace MaskRaster
                 {
                     slope = (p2.Y - p1.Y) / (p2.X - p1.X); //slope could be zero here
                     angle = Math.Atan(Math.Abs(p1.Y - p2.Y) / Math.Abs(p1.X - p2.X));
-                    xdiff = Math.Sin(angle) * buf_dist;
-                    ydiff = Math.Cos(angle) * buf_dist;
+                    xdiff = Math.Sin(angle) * BCA.FloodEvalStructureOffsetInFeet;
+                    ydiff = Math.Cos(angle) * BCA.FloodEvalStructureOffsetInFeet;
                 }
                 else
                 {
@@ -410,48 +442,42 @@ namespace MaskRaster
                     mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y + ydiff);
                     if (GeometryEngine.Instance.Intersects(shape, mp))
                     {
-                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X + xdiff, ctrpt.Y - ydiff));
+                        mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X + xdiff, ctrpt.Y - ydiff);
                     }
-                    else
-                    {
-                        list.Add(mp);
-                    }
+
+                    
                 }
                 else if (slope < 0 && Math.Abs(slope) > 1e-4)
                 {
                     mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X + xdiff, ctrpt.Y + ydiff);
                     if (GeometryEngine.Instance.Intersects(shape, mp))
                     {
-                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y - ydiff));
+                        mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y - ydiff);
                     } 
-                    else
-                    {
-                        list.Add(mp);
-                    }
                 }
                 else if (double.IsNaN(slope))
                 {
                     //vertical line
-                    if (ctrpt.X < shape_centroid.X)
+                    mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X - BCA.FloodEvalStructureOffsetInFeet, ctrpt.Y);
+                    if (GeometryEngine.Instance.Intersects(shape, mp))
                     {
-                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X - buf_dist, ctrpt.Y));
-                    }
-                    else if (ctrpt.X > shape_centroid.X)
-                    {
-                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X + buf_dist, ctrpt.Y));
+                        mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X + BCA.FloodEvalStructureOffsetInFeet, ctrpt.Y);
                     }
                 }
                 else //if (slope == 0)
                 {
                     //horizontal line
-                    if (ctrpt.Y < shape_centroid.Y)
+                    mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X, ctrpt.Y - BCA.FloodEvalStructureOffsetInFeet);
+                    if (GeometryEngine.Instance.Intersects(shape, mp))
                     {
-                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X, ctrpt.Y - buf_dist));
+                        mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X, ctrpt.Y + BCA.FloodEvalStructureOffsetInFeet);
                     }
-                    else if (ctrpt.Y > shape_centroid.Y)
-                    {
-                        list.Add(MapPointBuilderEx.CreateMapPoint(ctrpt.X, ctrpt.Y + buf_dist));
-                    }
+                }
+
+                bool still_overlap = Search(footprintLayer, mp, SpatialRelationship.Intersects);
+                if (!still_overlap)
+                {
+                    list.Add(mp);
                 }
             }
 
@@ -543,7 +569,6 @@ namespace MaskRaster
                                         {
                                             var polygon = shape as Polygon;
                                             shape_vertices = polygon.Points;
-                                            var lm = GetPolygonSegmentOffsetPoints(shape);
                                         }
 
                                         int buildingid = Convert.ToInt32(record["BID"]);
@@ -591,10 +616,15 @@ namespace MaskRaster
                                             var list_points = new List<MapPoint>();
                                             if (shape_vertices != null && shape_vertices.Count > 0)
                                             {
+                                                //we still use this test here such that be sure the footprint is a polygon from above
+                                                list_points = GetPolygonSegmentOffsetPoints(shape, footprintLayer);
+                                                /* we are not reading depths at structure corner anymore
+                                                 * as it is quite cumbersome to pivot a reading point that is OUTSIDE the structure
                                                 foreach(var sv in shape_vertices)
                                                 {
                                                     list_points.Add(sv.Extent.CenterCoordinate.ToMapPoint());
                                                 }
+                                                */
                                             }
                                             else
                                             {
@@ -610,36 +640,17 @@ namespace MaskRaster
                                                 // if the cursor is within the extent of the raster
                                                 if (GeometryEngine.Instance.Contains(rasterEnvelope, pt))
                                                 {
-
-
-
-                                                    Coordinate2D p2d = new Coordinate2D(pt);
-                                                    p2d.GetPerpendicular(true);
-
                                                     // find the map location expressed in row,column of the raster
                                                     var pixelLocationAtRaster = inputRaster.MapToPixel(pt.X, pt.Y);
+                                                    // fill the pixelblock with the pointer location starting at top left corner (-1, -1)
+                                                    // then pixel cell index=4 will be at the pt
+                                                    inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
 
-                                                    var (mapPtTupleX, mapPtTupleY) = inputRaster.PixelToMap(pixelLocationAtRaster.Item1 - 2, pixelLocationAtRaster.Item2 - 2 );
+                                                    /* No need to check if within structure anymore
+                                                    var (mapPtTupleX, mapPtTupleY) = inputRaster.PixelToMap(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1 );
                                                     var mapPt = MapPointBuilderEx.CreateMapPoint(mapPtTupleX, mapPtTupleY);
                                                     bool insidePolygon = GeometryEngine.Instance.Intersects(shape, mapPt);
-                                                    // fill the pixelblock with the pointer location
-                                                    // (-2, -2) then read at index=4, will read 1 grid cell away from the vertices
-                                                    // (+2, +2) then read at index=4, will read 1 grid cell away from the vertices
-                                                    if (insidePolygon)
-                                                    {
-                                                        inputRaster.Read(pixelLocationAtRaster.Item1 + 2, pixelLocationAtRaster.Item2 + 2, pixelBlock);
-                                                        (mapPtTupleX, mapPtTupleY) = inputRaster.PixelToMap(pixelLocationAtRaster.Item1 + 2, pixelLocationAtRaster.Item2 + 2 );
-                                                        mapPt = MapPointBuilderEx.CreateMapPoint(mapPtTupleX, mapPtTupleY);
-                                                        insidePolygon = GeometryEngine.Instance.Intersects(shape, mapPt);
-                                                        if (insidePolygon)
-                                                        {
-                                                            string stop = "now";
-                                                        }
-                                                    } 
-                                                    else
-                                                    {
-                                                        inputRaster.Read(pixelLocationAtRaster.Item1 - 2, pixelLocationAtRaster.Item2 - 2, pixelBlock);
-                                                    }
+                                                    */
     
                                                     // retrieve the actual pixel values from the pixelblock representing the red raster band
                                                     pixelArray = pixelBlock.GetPixelData(_bandindex, false);
@@ -655,10 +666,9 @@ namespace MaskRaster
 
                                             double ras_val = 0;
                                             int num = 0;
-                                            //int method = 1; // 0 will be a direct read; 1 will be an average
                                             int ind = 0;
                                             int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
-                                                                 //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
+                                            //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
                                             var list_values = new List<double>();
                                             foreach(var pt_pixelArray in list_array)
                                             {
@@ -706,12 +716,23 @@ namespace MaskRaster
                                                 ras_val = -9999;
                                             }
 
-                                            //record depth values, later on used for statistics
-                                            if (!b.BCADepthmaxStatistics.ContainsKey(alt.Name))
+                                            //record raster value readings for this building, later on used for statistics
+                                            if (gridDataType == GridDataType.WSEMAX)
                                             {
-                                                b.BCADepthmaxStatistics.Add(alt.Name, new BCAMATH());
+                                                if (!b.BCAWSEmaxStatistics.ContainsKey(alt.Name))
+                                                {
+                                                    b.BCAWSEmaxStatistics.Add(alt.Name, new BCAMATH());
+                                                }
+                                                b.BCAWSEmaxStatistics[alt.Name].SetData(list_values);
+                                            } 
+                                            else if (gridDataType == GridDataType.DEPTHMAX)
+                                            {
+                                                if (!b.BCADepthmaxStatistics.ContainsKey(alt.Name))
+                                                {
+                                                    b.BCADepthmaxStatistics.Add(alt.Name, new BCAMATH());
+                                                }
+                                                b.BCADepthmaxStatistics[alt.Name].SetData(list_values);
                                             }
-                                            b.BCADepthmaxStatistics[alt.Name].SetData(list_values);
 
                                             //clean up
                                             foreach(var pt_pixelArray in list_array)
@@ -722,7 +743,7 @@ namespace MaskRaster
                                             list_points.Clear();
                                             list_values.Clear();
 
-                                            //record result
+                                            //record building descriptive attributes, only read once
                                             if (b.latitude == null || b.longitude == null)
                                             {
                                                 //only save one copy of the building location x,y (lat-long) and footprint size
@@ -772,6 +793,8 @@ namespace MaskRaster
                                                 }
                                                 p.AddBuilding(b);
                                             }
+                                            //record nominal (average) raster value,
+                                            //these could be calculated later from raw data array saved with the building
                                             if (gridDataType == GridDataType.WSEMAX)
                                             {
                                                 if (!b.WSEmax.ContainsKey(alt.Name))

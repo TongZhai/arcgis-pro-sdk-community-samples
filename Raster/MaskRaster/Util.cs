@@ -31,7 +31,7 @@ namespace MaskRaster
 
     internal class Util
     {
-		static string _configfile = @"C:\dev\arcgis-pro-sdk-community-samples\Raster\MaskRaster\Config.daml";
+		static string _configfile = @"C:\dev\arcgis-pro-sdk-community-samples\Raster\MaskRaster\ConfigBCA.daml";
 		
 
 		/// <summary>
@@ -91,6 +91,8 @@ namespace MaskRaster
 						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND;
 						break;
 				}
+				var offset = alt_list_block[0].Attributes["floodevalstructureoffsetinfeet"].Value;
+				double.TryParse(offset, out BCA.FloodEvalStructureOffsetInFeet);
 				List<Alternative> alts = new List<Alternative>();
 				foreach (XmlNode xalt in alt_list_block[0])
 				{

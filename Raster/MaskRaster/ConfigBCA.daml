@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright 2023 Tong Zhai
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. 
+-->
+<BCAUtil AddInName="BCATool" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SMCAlternatives id="Alternatives" readmethod="BLOCKAVERAGE" floodevalmethod="STRUCTURESURROUND" floodevalstructureoffsetinfeet="3"  basefolder="C:\Data\SixMileCreek\RAS_Alt_Refined" basefolderfia ="C:\Data\SixMileCreek\FIA_Brookings\runs">
+    <Alternative type="WSEMAX" id="10Yr_Current" fia="10YrCurrent\10YrCurrent\10YrCurrent\TW100yrRain">10PCT\WSE (Max) Current 10PCT.vrt</Alternative>
+    <Alternative type="WSEMAX" id="50Yr_Current" fia="50YrCurrent\50YrCurrent\50YrCurrent\TW100yrRain">2PCT\WSE (Max) Current 2PCT.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Current" fia="100yr\100yr\100yr Current\TW100yrRain">6_Mile_refined\WSE (Max) Current 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="500Yr_Current" fia="500YrCurrent\500YrCurrent\500YrCurrent\TW100YrRain">02PCT\WSE (Max) Current 02PCT.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_Hwy14NorthBridge" fia="AltHwy14North10Yr\AltHwy14North10Yr\AltHwy14North10Yr\TW100YrRain">AltHwy14North10PCT\WSE (Max) AltHwy14North 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Hwy14NorthBridge" fia="AltHwy14North\AltHwy14North\AltHwy14North100Yr\TW100yrRain">AltHwy14North\WSE (Max) AltHwy14North 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_Hwy14SouthBridge" fia="AltHwy14South10Yr\AltHwy14South10Yr\AltHwy14South10Yr\TW100yrRain">AltHwy14South10PCT\WSE (Max) AltHwy14South 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Hwy14SouthBridge" fia="AltHwy14South\AltHwy14South\AltHwy14South100Yr\TW100YrRain">AltHwy14South1PCT\WSE (Max) AltHwy14South 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_Hwy14Bridges" fia="AltHwy14_10Yr\AltHwy14_10Yr\AltHwy14_10Yr\TW100yrRain">AltHwy1410PCT\WSE (Max) AltHwy14 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_Hwy14Bridges" fia="AltHwy14\AltHwy14\AltHwy14_100Yr\TW100yrRain">AltHwy141PCT\WSE (Max) AltHwy14 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_LeveeSouth" fia="AltLVSouth10Yr\AltLVSouth10Yr\AltLVSouth10Yr\TW100yrRain">AltLVSouth10PCT\WSE (Max) AltLVSouth 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_LeveeSouth" fia="AltLVSouth\AltLVSouth\AltLVSouth100Yr\TW100yrRain">AltLVSouth1PCT\WSE (Max) AltLVSouth 100Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="10Yr_LeveeSouthNorth" fia="AltLVSouthNorth10Yr\AltLVSouthNorth10Yr\AltLVSouthNorth10Yr\TW100yrRain">AltLVSouthNorth10PCT\WSE (Max) AltLVSouthNorth 10Yr.vrt</Alternative>
+    <Alternative type="WSEMAX" id="100Yr_LeveeSouthNorth" fia="AltLVSouthNorth100Yr\AltLVSouthNorth100Yr\AltLVSouthNorth100Yr\TW100yrRain">AltLVSouthNorth1PCT\WSE (Max) AltLVSouthNorth 100Yr.vrt</Alternative>
+
+    <Alternative type="DEPTHMAX" id="10Yr_Current">10PCT\Depth (Max) Current 10PCT.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="50Yr_Current">2PCT\Depth (Max) Current 2PCT.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Current">6_Mile_refined\Depth (Max) Current Refined.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="500Yr_Current">02PCT\Depth (Max) Current 02PCT.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_Hwy14NorthBridge">AltHwy14North10PCT\Depth (Max) AltHwy14North 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Hwy14NorthBridge">AltHwy14North\Depth (Max) AltHwy14N 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_Hwy14SouthBridge">AltHwy14South10PCT\Depth (Max) AltHwy14South 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Hwy14SouthBridge">AltHwy14South1PCT\Depth (Max) AltHwy14South 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_Hwy14Bridges">AltHwy1410PCT\Depth (Max) AltHwy14 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_Hwy14Bridges">AltHwy141PCT\Depth (Max) AltHwy14 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_LeveeSouth">AltLVSouth10PCT\Depth (Max) AltLVSouth 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_LeveeSouth">AltLVSouth1PCT\Depth (Max) AltLVSouth 100Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="10Yr_LeveeSouthNorth">AltLVSouthNorth10PCT\Depth (Max) AltLVSouthNorth 10Yr.vrt</Alternative>
+    <Alternative type="DEPTHMAX" id="100Yr_LeveeSouthNorth">AltLVSouthNorth1PCT\Depth (Max) AltLVSouthNorth 100Yr.vrt</Alternative>
+
+    <Alternative type="TERRAIN" id="TerrainCurrent">Terrain\Terrain_Clip.vrt</Alternative>
+  </SMCAlternatives>
+</BCAUtil>

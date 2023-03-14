@@ -26,6 +26,8 @@ namespace MaskRaster
         public static Application App;
         public static Workbook BCAWorkbook = null;
 
+        public static double FloodEvalStructureOffsetInFeet;
+
         public static Dictionary<int, Building> Buildings = new Dictionary<int, Building>();
         public static List<Parcel> Parcels = new List<Parcel>();
 

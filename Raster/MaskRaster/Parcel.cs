@@ -11,7 +11,7 @@ namespace MaskRaster
         public string ParcelID { get; set; }
         public List<Building> Buildings { get; set; }
 
-        public Dictionary<string, IMath> BCAMaths { get; set; } //keyed on alternative_id
+        public Dictionary<string, IMath> BCAMaths { get; set; } //keyed on alternative_id, this assumes going to be Depthmax data for BCA
 
         public EBuildingTypeBrookings PropertyType { get; private set; }
 

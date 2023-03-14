@@ -165,22 +165,38 @@ namespace MaskRaster
             }
         }
 
-        private void btnSetupBCAInputs_Click(object sender, RoutedEventArgs e)
+        private void btnSetupBCAInputsv5_Click(object sender, RoutedEventArgs e)
         {
-            /*
+            BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
+            BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
+        }
+
+        private void btnSetupBCAInputsv6_Click(object sender, RoutedEventArgs e)
+        {
             foreach(var b in BCA.Buildings.Values)
             {
                 foreach(var alt in _Alternatives)
                 {
-                    var min = b.DepthmaxStatistics[alt.Name].Min();
-                    var max = b.DepthmaxStatistics[alt.Name].Max();
-                    var mean = b.DepthmaxStatistics[alt.Name].Mean();
-                    var median = b.DepthmaxStatistics[alt.Name].Median();
-                    var std = b.DepthmaxStatistics[alt.Name].StandardDeviation();
-                    var pct90 = b.DepthmaxStatistics[alt.Name].Percentile(90);
+                    var min = b.BCADepthmaxStatistics[alt.Name].Min();
+                    var max = b.BCADepthmaxStatistics[alt.Name].Max();
+                    var mean = b.BCADepthmaxStatistics[alt.Name].Mean();
+                    var median = b.BCADepthmaxStatistics[alt.Name].Median();
+                    var std = b.BCADepthmaxStatistics[alt.Name].StandardDeviation();
+                    var pct90 = b.BCADepthmaxStatistics[alt.Name].Percentile(90);
                 }
             }
-            */
+            foreach(var p in BCA.Parcels)
+            {
+                foreach(var alt in _Alternatives)
+                {
+                    var min = p.BCAMaths[alt.Name].Min();
+                    var max = p.BCAMaths[alt.Name].Max();
+                    var mean = p.BCAMaths[alt.Name].Mean();
+                    var median = p.BCAMaths[alt.Name].Median();
+                    var std = p.BCAMaths[alt.Name].StandardDeviation();
+                    var pct90 = p.BCAMaths[alt.Name].Percentile(90);
+                }
+            }
             BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
             BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
         }
