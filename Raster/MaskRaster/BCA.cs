@@ -13,6 +13,7 @@ using ArcGIS.Desktop.Mapping;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Core.Internal.CIM;
 using ArcGIS.Desktop.Internal.Mapping;
+using System.Runtime.InteropServices;
 
 namespace MaskRaster
 {
@@ -23,7 +24,7 @@ namespace MaskRaster
         public static string BCA_Worksheet3 = "Flood After Mitigation";
         public static string BCA_Worksheet4 = "Critical Facility Info";
 
-        public static Application AppExcel;
+        public static Application xlApp;
         public static Workbook BCAWorkbook = null;
 
         public static double FloodEvalStructureOffsetInFeet;
@@ -274,12 +275,12 @@ namespace MaskRaster
         {
             try
             {
-                if (AppExcel == null)
+                if (xlApp == null)
                 {
-                    AppExcel = new Application();
+                    xlApp = new Application();
                 }
-                AppExcel.Visible = true;
-                BCAWorkbook = AppExcel.Workbooks.Open(path);
+                xlApp.Visible = true;
+                BCAWorkbook = xlApp.Workbooks.Open(path);
                 Setup();
             }
             catch
@@ -2387,33 +2388,52 @@ namespace MaskRaster
         public static async void SetupDDFs(string DDFfilepath)
         {
 			//we assume we know the format of the DDF excel file and users are adhering to it
-		    if (AppExcel == null)
+		    if (xlApp == null)
 		    {
-                AppExcel = new Application();
+                xlApp = new Application();
 		    }
-            AppExcel.Visible = true;
-            var DDFWorkbook = AppExcel.Workbooks.Open(DDFfilepath);
-            var sheet = DDFWorkbook.Worksheets["DamageStructure"];
+            xlApp.Visible = true;
+            var xlWorkbooks = xlApp.Workbooks;
+            var xlDDFWorkbook = xlWorkbooks.Open(DDFfilepath);
+            var sheet = xlDDFWorkbook.Worksheets["DamageStructure"];
             SetupDamageStructure(sheet, DDFfilepath);
-            sheet = DDFWorkbook.Worksheets["DamageContent"];
+            if (sheet != null) Marshal.ReleaseComObject(sheet);
+            sheet = xlDDFWorkbook.Worksheets["DamageContent"];
             SetupDamageContent(sheet, DDFfilepath);
-            sheet = DDFWorkbook.Worksheets["DamageDisplacement"];
+            if (sheet != null) Marshal.ReleaseComObject(sheet);
+            sheet = xlDDFWorkbook.Worksheets["DamageDisplacement"];
             SetupDamageDisplacement(sheet, DDFfilepath);
+            if (sheet != null) Marshal.ReleaseComObject(sheet);
 
-            DDFWorkbook.Close(false);
-            AppExcel.Quit();
+            xlDDFWorkbook.Close(false);
+            xlWorkbooks.Close();
+            xlApp.Quit();
+            if (xlDDFWorkbook != null) Marshal.ReleaseComObject(xlDDFWorkbook);
+            if (xlWorkbooks != null) Marshal.ReleaseComObject(xlWorkbooks);
+            if (xlApp != null) Marshal.ReleaseComObject(xlApp);
+
             GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            MessageBox.Show("Depth-Damage Functions Updated.");
         }
 
         public static void SetupDamageStructure(Worksheet sheet, string DDFfilepath)
         {
-            var rangeDepth = sheet.UsedRange.Find(What: "Depth",  LookIn: XlFindLookIn.xlValues);
+            var xlLookinConfig = XlFindLookIn.xlValues;
+            var xlUsedRange = sheet.UsedRange;
+            var xlColumns = xlUsedRange.Columns;
+            var xlRows = xlUsedRange.Rows;
+            var xlRangeDepth = xlUsedRange.Find(What: "Depth",  LookIn: xlLookinConfig);
             var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
             DepthDamageFunction ddf = null;
 
-            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
-                var cell_value = sheet.Cells[rangeDepth.Row, colInd].Value;
+                var xlCell = sheet.Cells[xlRangeDepth.Row, colInd];
+                var cell_value = xlCell.Value;
                 if (cell_value != "Depth")
                 {
                     ddf = GetDDFByName(cell_value);
@@ -2424,15 +2444,18 @@ namespace MaskRaster
                     }
                     columnIndexDict.Add(colInd, ddf);
                 }
+                if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
             //get data dictionary
             List<double> depths = null;
             List<double> values = null;
             double v;
-            for(int i = 1; i <= sheet.UsedRange.Columns.Count; i++)
+            for(int i = 1; i <= xlColumns.Count; i++)
             {
-                var valueRange = sheet.Range[sheet.Cells[rangeDepth.Row + 1, i], sheet.Cells[sheet.UsedRange.Rows.Count, i]];
-                System.Array ovalues = (System.Array)valueRange.Cells.Value;
+                var xlCell1 = sheet.Cells[xlRangeDepth.Row + 1, i];
+                var xlCell2 = sheet.Cells[xlRows.Count, i];
+                var xlValueRange = sheet.Range[xlCell1, xlCell2];
+                System.Array ovalues = (System.Array)xlValueRange.Cells.Value;
                 if (i == 1)
                 {
                     depths = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
@@ -2446,18 +2469,30 @@ namespace MaskRaster
                         ddf.DDFStructure.Add(depths[j], values[j]);
                     }
                 }
+                if (xlCell1 != null) Marshal.ReleaseComObject(xlCell1);
+                if (xlCell2 != null) Marshal.ReleaseComObject(xlCell2);
+                if (xlValueRange != null) Marshal.ReleaseComObject(xlValueRange);
             }
+
+            if (xlRangeDepth != null) Marshal.ReleaseComObject(xlRangeDepth);
+            if (xlUsedRange != null) Marshal.ReleaseComObject(xlUsedRange);
+            if (xlColumns != null) Marshal.ReleaseComObject(xlColumns);
         }
 
         public static void SetupDamageContent(Worksheet sheet, string DDFfilepath)
         {
-            var rangeDepth = sheet.UsedRange.Find(What: "Depth",  LookIn: XlFindLookIn.xlValues);
+            var xlLookinConfig = XlFindLookIn.xlValues;
+            var xlUsedRange = sheet.UsedRange;
+            var xlRangeDepth = xlUsedRange.Find(What: "Depth",  LookIn: xlLookinConfig);
+            var xlColumns = xlUsedRange.Columns;
+            var xlRows = xlUsedRange.Rows;
             var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
             DepthDamageFunction ddf = null;
 
-            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
-                var cell_value = sheet.Cells[rangeDepth.Row, colInd].Value;
+                var xlCell = sheet.Cells[xlRangeDepth.Row, colInd];
+                var cell_value = xlCell.Value;
                 if (cell_value != "Depth")
                 {
                     ddf = GetDDFByName(cell_value);
@@ -2468,28 +2503,31 @@ namespace MaskRaster
                     }
                     columnIndexDict.Add(colInd, ddf);
                 }
+                if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
 
-            var rangeCSAggregate = sheet.UsedRange.Find(What: "CSAggregate",  LookIn: XlFindLookIn.xlValues);
-            bool aggregate = false;
-            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            var xlRangeCSAggregate = xlUsedRange.Find(What: "CSAggregate",  LookIn: xlLookinConfig);
+            for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
-                var cell_value = sheet.Cells[rangeCSAggregate.Row, colInd].Value;
+                var xlCell = sheet.Cells[xlRangeCSAggregate.Row, colInd];
+                var cell_value = xlCell.Value;
                 if (cell_value.ToString() != "CSAggregate")
                 {
                     ddf = columnIndexDict[colInd];
                     if (ddf != null && cell_value.GetType().Name == "Boolean")
                     {
-                        ddf.DamageBasedOnAggregate = aggregate;
+                        ddf.DamageBasedOnAggregate = cell_value;
                     }
                 }
+                if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
 
-            var rangeCSR = sheet.UsedRange.Find(What: "CSR",  LookIn: XlFindLookIn.xlValues);
+            var xlRangeCSR = xlUsedRange.Find(What: "CSR",  LookIn: xlLookinConfig);
             double csr = 0.0;
-            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
-                var cell_value = sheet.Cells[rangeCSR.Row, colInd].Value;
+                var xlCell = sheet.Cells[xlRangeCSR.Row, colInd];
+                var cell_value = xlCell.Value;
                 if (cell_value.ToString() != "CSR")
                 {
                     ddf = columnIndexDict[colInd];
@@ -2498,6 +2536,7 @@ namespace MaskRaster
                         ddf.ContentToStructureValueRatio = csr;
                     }
                 }
+                if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
 
 
@@ -2505,10 +2544,13 @@ namespace MaskRaster
             List<double> depths = new List<double>();
             List<double> values = new List<double>();
             double v;
-            for(int i = 1; i <= sheet.UsedRange.Columns.Count; i++)
+            for(int i = 1; i <= xlColumns.Count; i++)
             {
-                var valueRange = sheet.Range[sheet.Cells[rangeDepth.Row + 1, i], sheet.Cells[sheet.UsedRange.Rows.Count, i]];
-                System.Array ovalues = (System.Array)valueRange.Cells.Value;
+                var xlCell1 = sheet.Cells[xlRangeDepth.Row + 1, i];
+                var xlCell2 = sheet.Cells[xlRows.Count, i];
+                var xlValueRange = sheet.Range[xlCell1, xlCell2];
+                var xlValueRangeCells = xlValueRange.Cells;
+                System.Array ovalues = (System.Array)xlValueRangeCells.Value;
                 if (i == 1)
                 {
                     depths = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
@@ -2522,18 +2564,32 @@ namespace MaskRaster
                         ddf.DDFContent.Add(depths[j], values[j]);
                     }
                 }
+                if (xlCell1 != null) { Marshal.ReleaseComObject(xlCell1); }
+                if (xlCell2 != null) { Marshal.ReleaseComObject(xlCell2); }
+                if (xlValueRange != null) { Marshal.ReleaseComObject(xlValueRange); }
+                if (xlValueRangeCells != null) { Marshal.ReleaseComObject(xlValueRangeCells); }
             }
+
+            if (xlUsedRange != null) { Marshal.ReleaseComObject(xlUsedRange); }
+            if (xlRangeDepth != null) { Marshal.ReleaseComObject(xlRangeDepth); }
+            if (xlColumns != null) { Marshal.ReleaseComObject(xlColumns); }
+            if (xlRows != null) { Marshal.ReleaseComObject(xlRows); }
         }
 
         public static void SetupDamageDisplacement(Worksheet sheet, string DDFfilepath)
         {
-            var rangeDepth = sheet.UsedRange.Find(What: "Depth",  LookIn: XlFindLookIn.xlValues);
+            var xlLookinConfig = XlFindLookIn.xlValues;
+            var xlUsedRange = sheet.UsedRange;
+            var xlColumns = xlUsedRange.Columns;
+            var xlRows = xlUsedRange.Rows;
+            var xlRangeDepth = xlUsedRange.Find(What: "Depth",  LookIn: xlLookinConfig);
             var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
             DepthDamageFunction ddf = null;
 
-            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
-                var cell_value = sheet.Cells[rangeDepth.Row, colInd].Value;
+                var xlCell = sheet.Cells[xlRangeDepth.Row, colInd];
+                var cell_value = xlCell.Value;
                 if (cell_value != "Depth")
                 {
                     ddf = GetDDFByName(cell_value);
@@ -2544,15 +2600,19 @@ namespace MaskRaster
                     }
                     columnIndexDict.Add(colInd, ddf);
                 }
+                if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
             //get data dictionary
             List<double> depths = null;
             List<double> values = null;
             double v;
-            for(int i = 1; i <= sheet.UsedRange.Columns.Count; i++)
+            for(int i = 1; i <= xlColumns.Count; i++)
             {
-                var valueRange = sheet.Range[sheet.Cells[rangeDepth.Row + 1, i], sheet.Cells[sheet.UsedRange.Rows.Count, i]];
-                System.Array ovalues = (System.Array)valueRange.Cells.Value;
+                var xlCell1 = sheet.Cells[xlRangeDepth.Row + 1, i];
+                var xlCell2 = sheet.Cells[xlRows.Count, i];
+                var xlValueRange = sheet.Range[xlCell1, xlCell2];
+                var xlValueRangeCells = xlValueRange.Cells;
+                System.Array ovalues = (System.Array)xlValueRangeCells.Value;
                 if (i == 1)
                 {
                     depths = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
@@ -2566,7 +2626,16 @@ namespace MaskRaster
                         ddf.DDFDisplacement.Add(depths[j], values[j]);
                     }
                 }
+                if (xlCell1 != null) { Marshal.ReleaseComObject(xlCell1); }
+                if (xlCell2 != null) { Marshal.ReleaseComObject(xlCell2); }
+                if (xlValueRange != null) { Marshal.ReleaseComObject(xlValueRange); }
+                if (xlValueRangeCells != null) { Marshal.ReleaseComObject(xlValueRangeCells); }
             }
+
+            if (xlUsedRange != null) { Marshal.ReleaseComObject(xlUsedRange); }
+            if (xlRangeDepth != null) { Marshal.ReleaseComObject(xlRangeDepth); }
+            if (xlColumns != null) { Marshal.ReleaseComObject(xlColumns); }
+            if (xlRows != null) { Marshal.ReleaseComObject(xlRows); }
         }
 
         public static async void SetupParcels(Workbook parcelwb)

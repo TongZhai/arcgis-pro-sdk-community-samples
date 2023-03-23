@@ -173,6 +173,15 @@ namespace MaskRaster
 
         private void btnSetupBCAInputsv6_Click(object sender, RoutedEventArgs e)
         {
+            foreach(var ddf in BCA.DDFs.Values)
+            {
+                var depths_s = ddf.DDFStructure.Keys;
+                var values_s = ddf.DDFStructure.Values;
+                var depths_c = ddf.DDFContent.Keys;
+                var values_c = ddf.DDFContent.Values;
+                var depths_d = ddf.DDFDisplacement.Keys;
+                var values_d = ddf.DDFDisplacement.Values;
+            }
             foreach(var b in BCA.Buildings.Values)
             {
                 foreach(var alt in _Alternatives)
