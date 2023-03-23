@@ -32,6 +32,7 @@ namespace MaskRaster
         public static Dictionary<int, Building> Buildings = new Dictionary<int, Building>();
         public static List<Parcel> Parcels = new List<Parcel>();
         public static Dictionary<string, DepthDamageFunction> DDFs = new Dictionary<string, DepthDamageFunction>();
+        public static string ParcelTRCNFilepath = "";
 
         public static System.Data.DataTable Tab_RiverineFlood;
         public static System.Data.DataTable Tab_FloodBeforeMitigation;
@@ -2290,7 +2291,7 @@ namespace MaskRaster
             await ArcGIS.Desktop.Framework.Threading.Tasks.QueuedTask.Run(async () =>
             {
                 Buildings_To_Add.Clear();
-                foreach(var alt in alts)
+                foreach (var alt in alts)
                 {
                     if (string.IsNullOrEmpty(alt.FIA_Alternative))
                     {
@@ -2387,11 +2388,11 @@ namespace MaskRaster
         }
         public static async void SetupDDFs(string DDFfilepath)
         {
-			//we assume we know the format of the DDF excel file and users are adhering to it
-		    if (xlApp == null)
-		    {
+            //we assume we know the format of the DDF excel file and users are adhering to it
+            if (xlApp == null)
+            {
                 xlApp = new Application();
-		    }
+            }
             xlApp.Visible = true;
             var xlWorkbooks = xlApp.Workbooks;
             var xlDDFWorkbook = xlWorkbooks.Open(DDFfilepath);
@@ -2426,7 +2427,7 @@ namespace MaskRaster
             var xlUsedRange = sheet.UsedRange;
             var xlColumns = xlUsedRange.Columns;
             var xlRows = xlUsedRange.Rows;
-            var xlRangeDepth = xlUsedRange.Find(What: "Depth",  LookIn: xlLookinConfig);
+            var xlRangeDepth = xlUsedRange.Find(What: "Depth", LookIn: xlLookinConfig);
             var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
             DepthDamageFunction ddf = null;
 
@@ -2450,7 +2451,7 @@ namespace MaskRaster
             List<double> depths = null;
             List<double> values = null;
             double v;
-            for(int i = 1; i <= xlColumns.Count; i++)
+            for (int i = 1; i <= xlColumns.Count; i++)
             {
                 var xlCell1 = sheet.Cells[xlRangeDepth.Row + 1, i];
                 var xlCell2 = sheet.Cells[xlRows.Count, i];
@@ -2464,7 +2465,7 @@ namespace MaskRaster
                 {
                     values = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
                     ddf = columnIndexDict[i];
-                    for(int j = 0; j < depths.Count; j++)
+                    for (int j = 0; j < depths.Count; j++)
                     {
                         ddf.DDFStructure.Add(depths[j], values[j]);
                     }
@@ -2483,7 +2484,7 @@ namespace MaskRaster
         {
             var xlLookinConfig = XlFindLookIn.xlValues;
             var xlUsedRange = sheet.UsedRange;
-            var xlRangeDepth = xlUsedRange.Find(What: "Depth",  LookIn: xlLookinConfig);
+            var xlRangeDepth = xlUsedRange.Find(What: "Depth", LookIn: xlLookinConfig);
             var xlColumns = xlUsedRange.Columns;
             var xlRows = xlUsedRange.Rows;
             var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
@@ -2506,7 +2507,7 @@ namespace MaskRaster
                 if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
 
-            var xlRangeCSAggregate = xlUsedRange.Find(What: "CSAggregate",  LookIn: xlLookinConfig);
+            var xlRangeCSAggregate = xlUsedRange.Find(What: "CSAggregate", LookIn: xlLookinConfig);
             for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
                 var xlCell = sheet.Cells[xlRangeCSAggregate.Row, colInd];
@@ -2522,7 +2523,7 @@ namespace MaskRaster
                 if (xlCell != null) { Marshal.ReleaseComObject(xlCell); }
             }
 
-            var xlRangeCSR = xlUsedRange.Find(What: "CSR",  LookIn: xlLookinConfig);
+            var xlRangeCSR = xlUsedRange.Find(What: "CSR", LookIn: xlLookinConfig);
             double csr = 0.0;
             for (int colInd = 1; colInd <= xlColumns.Count; colInd++)
             {
@@ -2544,7 +2545,7 @@ namespace MaskRaster
             List<double> depths = new List<double>();
             List<double> values = new List<double>();
             double v;
-            for(int i = 1; i <= xlColumns.Count; i++)
+            for (int i = 1; i <= xlColumns.Count; i++)
             {
                 var xlCell1 = sheet.Cells[xlRangeDepth.Row + 1, i];
                 var xlCell2 = sheet.Cells[xlRows.Count, i];
@@ -2559,7 +2560,7 @@ namespace MaskRaster
                 {
                     values = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
                     ddf = columnIndexDict[i];
-                    for(int j = 0; j < depths.Count; j++)
+                    for (int j = 0; j < depths.Count; j++)
                     {
                         ddf.DDFContent.Add(depths[j], values[j]);
                     }
@@ -2582,7 +2583,7 @@ namespace MaskRaster
             var xlUsedRange = sheet.UsedRange;
             var xlColumns = xlUsedRange.Columns;
             var xlRows = xlUsedRange.Rows;
-            var xlRangeDepth = xlUsedRange.Find(What: "Depth",  LookIn: xlLookinConfig);
+            var xlRangeDepth = xlUsedRange.Find(What: "Depth", LookIn: xlLookinConfig);
             var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
             DepthDamageFunction ddf = null;
 
@@ -2606,7 +2607,7 @@ namespace MaskRaster
             List<double> depths = null;
             List<double> values = null;
             double v;
-            for(int i = 1; i <= xlColumns.Count; i++)
+            for (int i = 1; i <= xlColumns.Count; i++)
             {
                 var xlCell1 = sheet.Cells[xlRangeDepth.Row + 1, i];
                 var xlCell2 = sheet.Cells[xlRows.Count, i];
@@ -2621,7 +2622,7 @@ namespace MaskRaster
                 {
                     values = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
                     ddf = columnIndexDict[i];
-                    for(int j = 0; j < depths.Count; j++)
+                    for (int j = 0; j < depths.Count; j++)
                     {
                         ddf.DDFDisplacement.Add(depths[j], values[j]);
                     }
@@ -2638,9 +2639,93 @@ namespace MaskRaster
             if (xlRows != null) { Marshal.ReleaseComObject(xlRows); }
         }
 
-        public static async void SetupParcels(Workbook parcelwb)
+        public static async void SetupParcels(IProgress<MyProgress> progress)
         {
+            foreach (var pl in Parcels)
+            {
+                pl.TotalReplacementCostNew = 0;
+            }
+            int numParcels = 0;
+            //this is a one time thing per local parcel data format
+            xlApp = new Application();
+            xlApp.Visible = true;
+            var xlWorkbooks = xlApp.Workbooks;
+            var xlParcelWorkbook = xlWorkbooks.Open(ParcelTRCNFilepath);
+            var sheet = xlParcelWorkbook.Worksheets["Sheet1"];
 
+            var xlUsedRange = sheet.UsedRange;
+            var xlColumns = xlUsedRange.Columns;
+            var xlRows = xlUsedRange.Rows;
+            var xlColumn1 = xlColumns[1];
+            var xlColumn5 = xlColumns[5];
+
+            var rowCount = xlRows.Count;
+            var xlColumn1Cell1 = sheet.Cells[2, 1];
+            var xlColumn1Cell2 = sheet.Cells[rowCount, 1];
+            var xlColumn5Cell1 = sheet.Cells[2, 5];
+            var xlColumn5Cell2 = sheet.Cells[rowCount, 5];
+
+            var xlRangeParcelColumn = sheet.Range[xlColumn1Cell1, xlColumn1Cell2];
+            var xlRangeParcelColumnCells = xlRangeParcelColumn.Cells;
+            System.Array parcels = (System.Array)xlRangeParcelColumnCells.Value;
+            var ls_parcels = parcels.OfType<string>().Select(o => o.ToString()).ToList();
+
+            var xlRangeTRCNColumn = sheet.Range[xlColumn5Cell1, xlColumn5Cell2];
+            var xlRangeTRCNColumnCells = xlRangeTRCNColumn.Cells;
+            System.Array TRCNs = (System.Array)xlRangeTRCNColumnCells.Value;
+            var ls_TRCNs = TRCNs.OfType<double>().Select(o => o).ToList();
+
+            ProgressorSource ps = new ProgressorSource($"Reading {ParcelTRCNFilepath}: ", false);
+            await QueuedTask.Run(() =>
+            {
+                ps.Max = (uint)ls_parcels.Count;
+                ps.Progressor.Value = 0;
+                for (int r = 0; r < ls_parcels.Count; r++)
+                {
+                    var pc = Parcels.Where(p => p.ParcelID == ls_parcels[r]).FirstOrDefault();
+                    if (pc == null)
+                    {
+                        pc = new Parcel(ls_parcels[r]);
+                        var xlCellAddress = xlRangeParcelColumn.Cells[r + 2, 2];
+                        var xlCellOwner = xlRangeParcelColumn.Cells[r + 2, 3];
+                        pc.StreetAddress = xlCellAddress.Value;
+                        pc.Owner = xlCellOwner.Value;
+                        Parcels.Add(pc);
+                        Marshal.ReleaseComObject(xlCellAddress);
+                        Marshal.ReleaseComObject(xlCellOwner);
+                        numParcels++;
+                    }
+                    pc.TotalReplacementCostNew += ls_TRCNs[r];
+
+                    ps.Progressor.Value++;
+                    ps.Progressor.Status = (ps.Progressor.Value * 100 / ps.Max) + @" % Completed";
+                    ps.Progressor.Message = $"Reading parcel: {pc.ParcelID}- by {pc.Owner}";
+
+                    /* within ArcGIS Pro, any progress is not working
+                    if (progress != null)
+                    {
+                        var args = new MyProgress();
+                        args.ProgressPercentage = r / ls_parcels.Count * 100;
+                        args.Text = "continuing";
+                        progress.Report(args); // calls SynchronizationContext.Post
+                    }
+                    */
+                }
+
+                // clean up
+                if (sheet != null) Marshal.ReleaseComObject(sheet);
+                xlParcelWorkbook.Close(false);
+                xlWorkbooks.Close();
+                xlApp.Quit();
+                if (xlParcelWorkbook != null) Marshal.ReleaseComObject(xlParcelWorkbook);
+                if (xlWorkbooks != null) Marshal.ReleaseComObject(xlWorkbooks);
+                if (xlApp != null) Marshal.ReleaseComObject(xlApp);
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }, ps.Progressor);
         }
 
         public static DepthDamageFunction GetDDFByName(string name)

@@ -267,6 +267,37 @@ namespace MaskRaster
         {
             Util.GetConfigDaml(true);
         }
+
+        private async Task<string> ReadTRCNs()
+        {
+            BCAInputsProgress.Minimum = 0;
+            BCAInputsProgress.Maximum = 100;
+            BCAInputsProgress.Value = 0;
+            var myprogress = new Progress<MyProgress>();
+            myprogress.ProgressChanged += ( s, e ) =>
+            {
+               BCAInputsProgress.Value = e.ProgressPercentage;
+               //txtResult.Text += e.Text;
+            };
+            //return await BCA.SetupParcels(myprogress);
+            return "";
+        }
+
+        private void btnReadParcelTRCNs_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(BCA.ParcelTRCNFilepath) || !File.Exists(BCA.ParcelTRCNFilepath))
+            {
+                System.Windows.MessageBox.Show("Need to specify Parcel TRCN data file path, please read the Depth-Damage Function data first.");
+                return;
+            }
+            if (!File.Exists(BCA.ParcelTRCNFilepath))
+            {
+                System.Windows.MessageBox.Show("Need to specify Parcel TRCN data file path, suggest double-check the 'parcel' setting in the Depth-Damage Function data configuration.");
+                return;
+            }
+
+            BCA.SetupParcels(null);
+        }
     }
 
 }

@@ -128,7 +128,7 @@ namespace MaskRaster
                 //now setup list of DDFs
 				XmlNodeList DDF_list_block = xDoc.GetElementsByTagName("DDFs");
 				var DDFfilepath = DDF_list_block[0].Attributes["DDF"].Value;
-				var Parcelfilepath = DDF_list_block[0].Attributes["Parcels"].Value;
+				BCA.ParcelTRCNFilepath = DDF_list_block[0].Attributes["Parcels"].Value;
 				BCA.DDFs = new Dictionary<string, DepthDamageFunction>();
 				foreach (XmlNode xalt in DDF_list_block[0])
 				{

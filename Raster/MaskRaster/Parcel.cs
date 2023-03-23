@@ -16,6 +16,9 @@ namespace MaskRaster
 
         public EBuildingTypeBrookings PropertyType { get; private set; }
 
+        public string StreetAddress;
+        public string Owner;
+
         public Parcel(string id)
         {
             ParcelID = id;
