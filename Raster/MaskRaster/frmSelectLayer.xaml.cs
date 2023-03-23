@@ -265,7 +265,7 @@ namespace MaskRaster
 
         private void btnReadDDFs_Click(object sender, RoutedEventArgs e)
         {
-            Util.GetConfigDaml(true);
+            Util.GetConfigDamlDDFs();
         }
 
         private async Task<string> ReadTRCNs()
@@ -285,12 +285,12 @@ namespace MaskRaster
 
         private void btnReadParcelTRCNs_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(BCA.ParcelTRCNFilepath) || !File.Exists(BCA.ParcelTRCNFilepath))
+            if (string.IsNullOrEmpty(BCA.FilepathParcelTRCN) || !File.Exists(BCA.FilepathParcelTRCN))
             {
                 System.Windows.MessageBox.Show("Need to specify Parcel TRCN data file path, please read the Depth-Damage Function data first.");
                 return;
             }
-            if (!File.Exists(BCA.ParcelTRCNFilepath))
+            if (!File.Exists(BCA.FilepathParcelTRCN))
             {
                 System.Windows.MessageBox.Show("Need to specify Parcel TRCN data file path, suggest double-check the 'parcel' setting in the Depth-Damage Function data configuration.");
                 return;

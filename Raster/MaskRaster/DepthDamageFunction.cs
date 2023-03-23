@@ -11,6 +11,7 @@ namespace MaskRaster
         public string OccupancyType { get; private set; }
         public string OccupancyTypeAlias { get; private set; }
         public string DataSource { get; private set; }
+        public double FreeboardFeet { get; set; }
 
         public bool DamageBasedOnAggregate = false;
         public double ContentToStructureValueRatio { get; set; }

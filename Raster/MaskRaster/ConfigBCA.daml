@@ -48,19 +48,27 @@ limitations under the License.
     <Alternative type="TERRAIN" id="TerrainCurrent">Terrain\Terrain_Clip.vrt</Alternative>
   </SMCAlternatives>
   <!-- The DDF file must use the same occupancy type as used here; the Parcels should have the same Parcel_ID as building footprint data as well -->
-  <DDFs DDF="C:\Data\SixMileCreek\FEMA_BCA\SixmileCr_BCA_DDF_NoKS.xlsx" Parcels="C:\Data\SixMileCreek\FEMA_BCA\Brookings\countywide structure values.xls">
-    <OccupancyType alias="Apartment">Apartment</OccupancyType>
-    <OccupancyType alias="Comm">Commercial</OccupancyType>
-    <OccupancyType alias="Detached">Detached</OccupancyType>
-    <OccupancyType alias="Fire">Fire</OccupancyType>
-    <OccupancyType alias="Health">Health</OccupancyType>
-    <OccupancyType alias="Ind">Industrial</OccupancyType>
-    <OccupancyType alias="Library">Library</OccupancyType>
-    <OccupancyType alias="Mobile">Mobile</OccupancyType>
-    <OccupancyType alias="Muni">Municipal</OccupancyType>
-    <OccupancyType alias="Police">Police</OccupancyType>
-    <OccupancyType alias="Rec">Recreation</OccupancyType>
-    <OccupancyType alias="Res">Residential</OccupancyType>
-    <OccupancyType alias="School">School</OccupancyType>
+  <DDFs DDF="C:\Data\SixMileCreek\FEMA_BCA\SixmileCr_BCA_DDF_NoKS.xlsx">
+    <OccupancyType alias="Apartment" freeboardfeet="0.5">Apartment</OccupancyType>
+    <OccupancyType alias="Comm" freeboardfeet="0.5">Commercial</OccupancyType>
+    <OccupancyType alias="Detached" freeboardfeet="0.5">Detached</OccupancyType>
+    <OccupancyType alias="Fire" freeboardfeet="0.5">Fire</OccupancyType>
+    <OccupancyType alias="Health" freeboardfeet="0.5">Health</OccupancyType>
+    <OccupancyType alias="Ind" freeboardfeet="0.5">Industrial</OccupancyType>
+    <OccupancyType alias="Library" freeboardfeet="0.5">Library</OccupancyType>
+    <OccupancyType alias="Mobile" freeboardfeet="0.5">Mobile</OccupancyType>
+    <OccupancyType alias="Muni" freeboardfeet="0.5">Municipal</OccupancyType>
+    <OccupancyType alias="Police" freeboardfeet="0.5">Police</OccupancyType>
+    <OccupancyType alias="Rec" freeboardfeet="0.5">Recreation</OccupancyType>
+    <OccupancyType alias="Res" freeboardfeet="0.5">Residential</OccupancyType>
+    <OccupancyType alias="School" freeboardfeet="0.5">School</OccupancyType>
   </DDFs>
+  <Parcels>
+    <DataFile>C:\Data\SixMileCreek\FEMA_BCA\Brookings\countywide structure values.xls</DataFile>
+    <!-- the included file simply has a list of parcels to be included in the BCA analysis
+         if this user-specified list doesn't exist, then the building footprint GIS layer will 
+         be the scope of the parcels to be included in BCA analysis
+    -->
+    <IncludedList>C:\Data\SixMileCreek\FEMA_BCA\Brookings\included.txt</IncludedList>
+  </Parcels>
 </BCAUtil>

@@ -1,5 +1,6 @@
 ﻿using ArcGIS.Desktop.Internal.Mapping.Locate;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,7 +33,8 @@ namespace MaskRaster
         public static Dictionary<int, Building> Buildings = new Dictionary<int, Building>();
         public static List<Parcel> Parcels = new List<Parcel>();
         public static Dictionary<string, DepthDamageFunction> DDFs = new Dictionary<string, DepthDamageFunction>();
-        public static string ParcelTRCNFilepath = "";
+        public static string FilepathParcelTRCN = "";
+        public static string FilepathParcelIncluded = "";
 
         public static System.Data.DataTable Tab_RiverineFlood;
         public static System.Data.DataTable Tab_FloodBeforeMitigation;
@@ -2389,10 +2391,7 @@ namespace MaskRaster
         public static async void SetupDDFs(string DDFfilepath)
         {
             //we assume we know the format of the DDF excel file and users are adhering to it
-            if (xlApp == null)
-            {
-                xlApp = new Application();
-            }
+            xlApp = new Application();
             xlApp.Visible = true;
             var xlWorkbooks = xlApp.Workbooks;
             var xlDDFWorkbook = xlWorkbooks.Open(DDFfilepath);
@@ -2415,8 +2414,8 @@ namespace MaskRaster
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            //GC.Collect();
+            //GC.WaitForPendingFinalizers();
 
             MessageBox.Show("Depth-Damage Functions Updated.");
         }
@@ -2645,12 +2644,18 @@ namespace MaskRaster
             {
                 pl.TotalReplacementCostNew = 0;
             }
+
+            List<string> parcels_to_be_included = null;
+            if (File.Exists(FilepathParcelIncluded))
+            {
+                parcels_to_be_included = Util.ReadLines(FilepathParcelIncluded, Encoding.UTF8).ToList();
+            }
             int numParcels = 0;
             //this is a one time thing per local parcel data format
             xlApp = new Application();
             xlApp.Visible = true;
             var xlWorkbooks = xlApp.Workbooks;
-            var xlParcelWorkbook = xlWorkbooks.Open(ParcelTRCNFilepath);
+            var xlParcelWorkbook = xlWorkbooks.Open(FilepathParcelTRCN);
             var sheet = xlParcelWorkbook.Worksheets["Sheet1"];
 
             var xlUsedRange = sheet.UsedRange;
@@ -2675,7 +2680,7 @@ namespace MaskRaster
             System.Array TRCNs = (System.Array)xlRangeTRCNColumnCells.Value;
             var ls_TRCNs = TRCNs.OfType<double>().Select(o => o).ToList();
 
-            ProgressorSource ps = new ProgressorSource($"Reading {ParcelTRCNFilepath}: ", false);
+            ProgressorSource ps = new ProgressorSource($"Reading {FilepathParcelTRCN}: ", false);
             await QueuedTask.Run(() =>
             {
                 ps.Max = (uint)ls_parcels.Count;
@@ -2723,8 +2728,8 @@ namespace MaskRaster
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+                //GC.Collect();
+                //GC.WaitForPendingFinalizers();
             }, ps.Progressor);
         }
 
