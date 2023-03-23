@@ -253,6 +253,11 @@ namespace MaskRaster
             }
             BCA.ReadFIAOutputs(_Alternatives);
         }
+
+        private void btnReadDDFs_Click(object sender, RoutedEventArgs e)
+        {
+            Util.GetConfigDaml(true);
+        }
     }
 
 }

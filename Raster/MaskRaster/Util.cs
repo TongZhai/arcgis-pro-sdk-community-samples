@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using MapWinUtility;
 using atcData;
+using Microsoft.Office.Interop.Excel;
 
 namespace MaskRaster
 {
@@ -53,7 +54,7 @@ namespace MaskRaster
 		/// </summary>
 		/// <param name="fileName">file path (partial) of esriAddinX package</param>
 		/// <returns>tuple: version, desktopVersion</returns>
-		public static List<Alternative> GetConfigDamlSMCAlternatives()
+		public static List<Alternative> GetConfigDaml(bool updateDDFOnly = false)
 		{
 			// just test to see if loading problem
 			//MapWinUtility.Log l = new MapWinUtility.Log();
@@ -68,59 +69,82 @@ namespace MaskRaster
 					xDoc.LoadXml(daml); // @"<?xml version=""1.0"" encoding=""utf - 8""?>" + 
 				}
 				
-				XmlNodeList alt_list_block = xDoc.GetElementsByTagName("SMCAlternatives");
-				Alternative.basefolder = alt_list_block[0].Attributes["basefolder"].Value;
-				Alternative.basefolderfia = alt_list_block[0].Attributes["basefolderfia"].Value;
-				var lmethod = alt_list_block[0].Attributes["readmethod"].Value;
-				switch(lmethod)
+				if (!updateDDFOnly)
 				{
-					case nameof(EREADRASTERMETHOD.POINTDIRECT):
-						Alternative.readmethod = EREADRASTERMETHOD.POINTDIRECT;
-						break;
-					case nameof(EREADRASTERMETHOD.BLOCKAVERAGE):
-						Alternative.readmethod = EREADRASTERMETHOD.BLOCKAVERAGE;
-						break;
+    				XmlNodeList alt_list_block = xDoc.GetElementsByTagName("SMCAlternatives");
+    				Alternative.basefolder = alt_list_block[0].Attributes["basefolder"].Value;
+    				Alternative.basefolderfia = alt_list_block[0].Attributes["basefolderfia"].Value;
+    				var lmethod = alt_list_block[0].Attributes["readmethod"].Value;
+    				switch(lmethod)
+    				{
+    					case nameof(EREADRASTERMETHOD.POINTDIRECT):
+    						Alternative.readmethod = EREADRASTERMETHOD.POINTDIRECT;
+    						break;
+    					case nameof(EREADRASTERMETHOD.BLOCKAVERAGE):
+    						Alternative.readmethod = EREADRASTERMETHOD.BLOCKAVERAGE;
+    						break;
+    				}
+    				lmethod = alt_list_block[0].Attributes["floodevalmethod"].Value;
+    				switch(lmethod)
+    				{
+    					case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER):
+    						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER;
+    						break;
+    					case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND):
+    						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND;
+    						break;
+    				}
+    				var offset = alt_list_block[0].Attributes["floodevalstructureoffsetinfeet"].Value;
+    				double.TryParse(offset, out BCA.FloodEvalStructureOffsetInFeet);
+    				List<Alternative> alts = new List<Alternative>();
+    				foreach (XmlNode xalt in alt_list_block[0])
+    				{
+    					string alt_id = xalt.Attributes["id"].Value;
+    					string alt_data_type = xalt.Attributes["type"].Value;
+    					string alt_fia = xalt.Attributes.GetNamedItem("fia") != null? xalt.Attributes["fia"].Value : "";
+    					string alt_path = xalt.ChildNodes[0].InnerText;
+    					Alternative alt = alts.Where(a => a.Name == alt_id).FirstOrDefault();
+    					if (alt == null)
+    					{
+    						alt = new Alternative(alt_id);
+    						alt.FIA_Alternative = alt_fia;
+    						alts.Add(alt);
+    					}
+    					switch (alt_data_type)
+    					{
+    						case nameof(GridDataType.WSEMAX):
+    							alt.PathWSEMAX = alt_path;
+    							break;
+    						case nameof(GridDataType.DEPTHMAX):
+    							alt.PathDEPTHMAX = alt_path;
+    							break;
+    						case nameof(GridDataType.TERRAIN):
+    							alt.PathTERRAIN= alt_path;
+    							break;
+    					}
+    				}
+    				return alts;
 				}
-				lmethod = alt_list_block[0].Attributes["floodevalmethod"].Value;
-				switch(lmethod)
+                //now setup list of DDFs
+				XmlNodeList DDF_list_block = xDoc.GetElementsByTagName("DDFs");
+				var DDFfilepath = DDF_list_block[0].Attributes["DDF"].Value;
+				var Parcelfilepath = DDF_list_block[0].Attributes["Parcels"].Value;
+				BCA.DDFs = new Dictionary<string, DepthDamageFunction>();
+				foreach (XmlNode xalt in DDF_list_block[0])
 				{
-					case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER):
-						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER;
-						break;
-					case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND):
-						Alternative.evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND;
-						break;
-				}
-				var offset = alt_list_block[0].Attributes["floodevalstructureoffsetinfeet"].Value;
-				double.TryParse(offset, out BCA.FloodEvalStructureOffsetInFeet);
-				List<Alternative> alts = new List<Alternative>();
-				foreach (XmlNode xalt in alt_list_block[0])
-				{
-					string alt_id = xalt.Attributes["id"].Value;
-					string alt_data_type = xalt.Attributes["type"].Value;
-					string alt_fia = xalt.Attributes.GetNamedItem("fia") != null? xalt.Attributes["fia"].Value : "";
-					string alt_path = xalt.ChildNodes[0].InnerText;
-					Alternative alt = alts.Where(a => a.Name == alt_id).FirstOrDefault();
-					if (alt == null)
+					string occupancytypealias = xalt.Attributes["alias"].Value;
+					string occupancytype = xalt.ChildNodes[0].InnerText;
+					DepthDamageFunction ddf = BCA.DDFs.Values.Where(d => d.OccupancyType == occupancytype).FirstOrDefault();
+					if (ddf == null)
 					{
-						alt = new Alternative(alt_id);
-						alt.FIA_Alternative = alt_fia;
-						alts.Add(alt);
-					}
-					switch (alt_data_type)
-					{
-						case nameof(GridDataType.WSEMAX):
-							alt.PathWSEMAX = alt_path;
-							break;
-						case nameof(GridDataType.DEPTHMAX):
-							alt.PathDEPTHMAX = alt_path;
-							break;
-						case nameof(GridDataType.TERRAIN):
-							alt.PathTERRAIN= alt_path;
-							break;
+						ddf = new DepthDamageFunction(occupancytype, occupancytypealias, DDFfilepath);
+						BCA.DDFs.Add(occupancytype, ddf);
 					}
 				}
-				return alts;
+				BCA.SetupDDFs(DDFfilepath);
+
+				return null;
+
 			}
 			catch (Exception ex)
 			{

@@ -23,13 +23,14 @@ namespace MaskRaster
         public static string BCA_Worksheet3 = "Flood After Mitigation";
         public static string BCA_Worksheet4 = "Critical Facility Info";
 
-        public static Application App;
+        public static Application AppExcel;
         public static Workbook BCAWorkbook = null;
 
         public static double FloodEvalStructureOffsetInFeet;
 
         public static Dictionary<int, Building> Buildings = new Dictionary<int, Building>();
         public static List<Parcel> Parcels = new List<Parcel>();
+        public static Dictionary<string, DepthDamageFunction> DDFs = new Dictionary<string, DepthDamageFunction>();
 
         public static System.Data.DataTable Tab_RiverineFlood;
         public static System.Data.DataTable Tab_FloodBeforeMitigation;
@@ -273,9 +274,12 @@ namespace MaskRaster
         {
             try
             {
-                App = new Application();
-                App.Visible = true;
-                BCAWorkbook = App.Workbooks.Open(path);
+                if (AppExcel == null)
+                {
+                    AppExcel = new Application();
+                }
+                AppExcel.Visible = true;
+                BCAWorkbook = AppExcel.Workbooks.Open(path);
                 Setup();
             }
             catch
@@ -2380,5 +2384,206 @@ namespace MaskRaster
                 }
             });
         }
+        public static async void SetupDDFs(string DDFfilepath)
+        {
+			//we assume we know the format of the DDF excel file and users are adhering to it
+		    if (AppExcel == null)
+		    {
+                AppExcel = new Application();
+		    }
+            AppExcel.Visible = true;
+            var DDFWorkbook = AppExcel.Workbooks.Open(DDFfilepath);
+            var sheet = DDFWorkbook.Worksheets["DamageStructure"];
+            SetupDamageStructure(sheet, DDFfilepath);
+            sheet = DDFWorkbook.Worksheets["DamageContent"];
+            SetupDamageContent(sheet, DDFfilepath);
+            sheet = DDFWorkbook.Worksheets["DamageDisplacement"];
+            SetupDamageDisplacement(sheet, DDFfilepath);
+
+            DDFWorkbook.Close(false);
+            AppExcel.Quit();
+            GC.Collect();
+        }
+
+        public static void SetupDamageStructure(Worksheet sheet, string DDFfilepath)
+        {
+            var rangeDepth = sheet.UsedRange.Find(What: "Depth",  LookIn: XlFindLookIn.xlValues);
+            var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
+            DepthDamageFunction ddf = null;
+
+            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            {
+                var cell_value = sheet.Cells[rangeDepth.Row, colInd].Value;
+                if (cell_value != "Depth")
+                {
+                    ddf = GetDDFByName(cell_value);
+                    if (ddf == null)
+                    {
+                        ddf = new DepthDamageFunction(cell_value, cell_value, DDFfilepath);
+                        DDFs.Add(cell_value, ddf);
+                    }
+                    columnIndexDict.Add(colInd, ddf);
+                }
+            }
+            //get data dictionary
+            List<double> depths = null;
+            List<double> values = null;
+            double v;
+            for(int i = 1; i <= sheet.UsedRange.Columns.Count; i++)
+            {
+                var valueRange = sheet.Range[sheet.Cells[rangeDepth.Row + 1, i], sheet.Cells[sheet.UsedRange.Rows.Count, i]];
+                System.Array ovalues = (System.Array)valueRange.Cells.Value;
+                if (i == 1)
+                {
+                    depths = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
+                }
+                else
+                {
+                    values = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
+                    ddf = columnIndexDict[i];
+                    for(int j = 0; j < depths.Count; j++)
+                    {
+                        ddf.DDFStructure.Add(depths[j], values[j]);
+                    }
+                }
+            }
+        }
+
+        public static void SetupDamageContent(Worksheet sheet, string DDFfilepath)
+        {
+            var rangeDepth = sheet.UsedRange.Find(What: "Depth",  LookIn: XlFindLookIn.xlValues);
+            var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
+            DepthDamageFunction ddf = null;
+
+            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            {
+                var cell_value = sheet.Cells[rangeDepth.Row, colInd].Value;
+                if (cell_value != "Depth")
+                {
+                    ddf = GetDDFByName(cell_value);
+                    if (ddf == null)
+                    {
+                        ddf = new DepthDamageFunction(cell_value, cell_value, DDFfilepath);
+                        DDFs.Add(cell_value, ddf);
+                    }
+                    columnIndexDict.Add(colInd, ddf);
+                }
+            }
+
+            var rangeCSAggregate = sheet.UsedRange.Find(What: "CSAggregate",  LookIn: XlFindLookIn.xlValues);
+            bool aggregate = false;
+            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            {
+                var cell_value = sheet.Cells[rangeCSAggregate.Row, colInd].Value;
+                if (cell_value.ToString() != "CSAggregate")
+                {
+                    ddf = columnIndexDict[colInd];
+                    if (ddf != null && cell_value.GetType().Name == "Boolean")
+                    {
+                        ddf.DamageBasedOnAggregate = aggregate;
+                    }
+                }
+            }
+
+            var rangeCSR = sheet.UsedRange.Find(What: "CSR",  LookIn: XlFindLookIn.xlValues);
+            double csr = 0.0;
+            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            {
+                var cell_value = sheet.Cells[rangeCSR.Row, colInd].Value;
+                if (cell_value.ToString() != "CSR")
+                {
+                    ddf = columnIndexDict[colInd];
+                    if (ddf != null && double.TryParse(cell_value.ToString(), out csr))
+                    {
+                        ddf.ContentToStructureValueRatio = csr;
+                    }
+                }
+            }
+
+
+            //get data dictionary
+            List<double> depths = new List<double>();
+            List<double> values = new List<double>();
+            double v;
+            for(int i = 1; i <= sheet.UsedRange.Columns.Count; i++)
+            {
+                var valueRange = sheet.Range[sheet.Cells[rangeDepth.Row + 1, i], sheet.Cells[sheet.UsedRange.Rows.Count, i]];
+                System.Array ovalues = (System.Array)valueRange.Cells.Value;
+                if (i == 1)
+                {
+                    depths = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
+                }
+                else
+                {
+                    values = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
+                    ddf = columnIndexDict[i];
+                    for(int j = 0; j < depths.Count; j++)
+                    {
+                        ddf.DDFContent.Add(depths[j], values[j]);
+                    }
+                }
+            }
+        }
+
+        public static void SetupDamageDisplacement(Worksheet sheet, string DDFfilepath)
+        {
+            var rangeDepth = sheet.UsedRange.Find(What: "Depth",  LookIn: XlFindLookIn.xlValues);
+            var columnIndexDict = new Dictionary<int, DepthDamageFunction>();
+            DepthDamageFunction ddf = null;
+
+            for (int colInd = 1; colInd <= sheet.UsedRange.Columns.Count; colInd++)
+            {
+                var cell_value = sheet.Cells[rangeDepth.Row, colInd].Value;
+                if (cell_value != "Depth")
+                {
+                    ddf = GetDDFByName(cell_value);
+                    if (ddf == null)
+                    {
+                        ddf = new DepthDamageFunction(cell_value, cell_value, DDFfilepath);
+                        DDFs.Add(cell_value, ddf);
+                    }
+                    columnIndexDict.Add(colInd, ddf);
+                }
+            }
+            //get data dictionary
+            List<double> depths = null;
+            List<double> values = null;
+            double v;
+            for(int i = 1; i <= sheet.UsedRange.Columns.Count; i++)
+            {
+                var valueRange = sheet.Range[sheet.Cells[rangeDepth.Row + 1, i], sheet.Cells[sheet.UsedRange.Rows.Count, i]];
+                System.Array ovalues = (System.Array)valueRange.Cells.Value;
+                if (i == 1)
+                {
+                    depths = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
+                }
+                else
+                {
+                    values = ovalues.OfType<double>().Select(o => double.TryParse(o.ToString(), out v) ? v : double.NaN).ToList();
+                    ddf = columnIndexDict[i];
+                    for(int j = 0; j < depths.Count; j++)
+                    {
+                        ddf.DDFDisplacement.Add(depths[j], values[j]);
+                    }
+                }
+            }
+        }
+
+        public static async void SetupParcels(Workbook parcelwb)
+        {
+
+        }
+
+        public static DepthDamageFunction GetDDFByName(string name)
+        {
+            if (DDFs.ContainsKey(name))
+            {
+                return DDFs[name];
+            }
+            var ddf = DDFs.Values.Where(d => d.OccupancyTypeAlias == name).FirstOrDefault();
+            return ddf;
+        }
+
+
     }
 }

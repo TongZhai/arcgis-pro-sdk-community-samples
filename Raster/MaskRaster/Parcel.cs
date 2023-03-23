@@ -9,6 +9,7 @@ namespace MaskRaster
     public class Parcel
     {
         public string ParcelID { get; set; }
+        public double TotalReplacementCostNew { get; set; }
         public List<Building> Buildings { get; set; }
 
         public Dictionary<string, IMath> BCAMaths { get; set; } //keyed on alternative_id, this assumes going to be Depthmax data for BCA

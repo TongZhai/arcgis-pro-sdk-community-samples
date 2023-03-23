@@ -85,7 +85,7 @@ namespace MaskRaster
                 }
 
                 Util.LoadDataSourcePlugins();
-                var alts = Util.GetConfigDamlSMCAlternatives();
+                var alts = Util.GetConfigDaml();
                 MaskRasterVM.Alternatives = alts;
                 Building.Alternatives = alts;
 

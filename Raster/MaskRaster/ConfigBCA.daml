@@ -48,7 +48,7 @@ limitations under the License.
     <Alternative type="TERRAIN" id="TerrainCurrent">Terrain\Terrain_Clip.vrt</Alternative>
   </SMCAlternatives>
   <!-- The DDF file must use the same occupancy type as used here; the Parcels should have the same Parcel_ID as building footprint data as well -->
-  <Structures DDF="C:\Data\SixMileCreek\FEMA_BCA\SixmileCr_BCA_DDF.xlsx" Parcels="C:\Data\SixMileCreek\FEMA_BCA\Brookings\countywide structure values.xls">
+  <DDFs DDF="C:\Data\SixMileCreek\FEMA_BCA\SixmileCr_BCA_DDF_NoKS.xlsx" Parcels="C:\Data\SixMileCreek\FEMA_BCA\Brookings\countywide structure values.xls">
     <OccupancyType alias="Apartment">Apartment</OccupancyType>
     <OccupancyType alias="Comm">Commercial</OccupancyType>
     <OccupancyType alias="Detached">Detached</OccupancyType>
@@ -62,5 +62,5 @@ limitations under the License.
     <OccupancyType alias="Rec">Recreation</OccupancyType>
     <OccupancyType alias="Res">Residential</OccupancyType>
     <OccupancyType alias="School">School</OccupancyType>
-  </Structures>
+  </DDFs>
 </BCAUtil>
