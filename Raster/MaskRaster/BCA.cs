@@ -278,13 +278,12 @@ namespace MaskRaster
         {
             try
             {
-                if (xlApp == null)
-                {
-                    xlApp = new Application();
-                }
+                xlApp = new Application();
                 xlApp.Visible = true;
-                BCAWorkbook = xlApp.Workbooks.Open(path);
+                var xlBooks = xlApp.Workbooks;
+                BCAWorkbook = xlBooks.Open(path);
                 Setup();
+                Marshal.ReleaseComObject(xlBooks);
             }
             catch
             {
@@ -328,6 +327,20 @@ namespace MaskRaster
                 }
             }
             return l;
+        }
+        public static void SetupBCAv6Worksheet(List<Alternative> alts, Alternative selectedAlternative)
+        {
+            int column;
+            int row;
+            Dictionary<int, Building> b_in_500YrFP = GetBuildingsIn500YearFloodplain();
+            int[] building_keys = b_in_500YrFP.Keys.ToArray();
+
+            xlApp = new Application();
+            xlApp.Visible = true;
+            var xlWorkbooks = xlApp.Workbooks;
+            var xlDDFWorkbook = xlWorkbooks.Open("");
+            var sheet = xlDDFWorkbook.Worksheets["DamageStructure"];
+
         }
 
         public static void SetupBCAInputs(ProgressBar pb, List<Alternative> alts, Alternative selectedAlternative)

@@ -173,6 +173,7 @@ namespace MaskRaster
 
         private void btnSetupBCAInputsv6_Click(object sender, RoutedEventArgs e)
         {
+            /*
             foreach(var ddf in BCA.DDFs.Values)
             {
                 var depths_s = ddf.DDFStructure.Keys;
@@ -206,8 +207,8 @@ namespace MaskRaster
                     var pct90 = p.BCAMaths[alt.Name].Percentile(90);
                 }
             }
-            BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
-            BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
+            */
+            BCA.SetupBCAv6Worksheet(_Alternatives, cboAlternatives.SelectedItem as Alternative);
         }
 
         private async void cboVectorLayers_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -297,6 +298,28 @@ namespace MaskRaster
             }
 
             BCA.SetupParcels(null);
+        }
+
+        /***
+         * Perform one time tasks on as needed basis
+         * ***/
+        private void btnCustomOpn_Click(object sender, RoutedEventArgs e)
+        {
+            var mapView = MapView.Active;
+            var lyr_list_footprint = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList().Where(f => f.Name.StartsWith("BuildingFootprints_SMC"));
+            var lyr_list_parcel = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList().Where(f => f.Name.StartsWith("MissingParcels_RESPEC"));
+            if (lyr_list_footprint.Any() && lyr_list_parcel.Any())
+            {
+                foreach(var lf in lyr_list_footprint)
+                {
+                    foreach(var lp in lyr_list_parcel)
+                    {
+                        MaskRasterVM.CrosscheckParcelIDs(lf, lp);
+                        break;
+                    }
+                    break;
+                }
+            }
         }
     }
 

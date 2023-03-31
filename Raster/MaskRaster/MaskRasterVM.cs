@@ -403,6 +403,35 @@ namespace MaskRaster
             }
             return false;
         }
+        public static List<Row> SelectByLocation(this BasicFeatureLayer searchLayer, Geometry searchGeometry, SpatialRelationship spatialRelationship)
+        {
+            RowCursor rowCursor = null;
+
+            // define a spatial query filter
+            var spatialQueryFilter = new SpatialQueryFilter
+            {
+                // passing the search geometry to the spatial filter
+                FilterGeometry = searchGeometry,
+                // define the spatial relationship between search geometry and feature class
+                SpatialRelationship = spatialRelationship
+            };
+
+            // apply the spatial filter to the feature layer in question
+            rowCursor = searchLayer.Search(spatialQueryFilter);
+            int featCount = 0;
+            List<Row> rows = new List<Row>();
+            while (rowCursor.MoveNext())
+            {
+                rows.Add(rowCursor.Current);
+                featCount += 1;
+            }
+            searchLayer.ClearSelection(); //search set selection???
+            if (featCount > 0)
+            {
+                return rows;
+            }
+            return null;
+        }
 
         //this only works for polygons
         public static List<MapPoint> GetPolygonSegmentOffsetPoints(Geometry shape, FeatureLayer footprintLayer)
@@ -436,7 +465,7 @@ namespace MaskRaster
                     slope = double.NaN;
                 }
 
-                
+
                 if (slope > 0 && Math.Abs(slope) > 1e-4)
                 {
                     mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y + ydiff);
@@ -445,7 +474,7 @@ namespace MaskRaster
                         mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X + xdiff, ctrpt.Y - ydiff);
                     }
 
-                    
+
                 }
                 else if (slope < 0 && Math.Abs(slope) > 1e-4)
                 {
@@ -453,7 +482,7 @@ namespace MaskRaster
                     if (GeometryEngine.Instance.Intersects(shape, mp))
                     {
                         mp = MapPointBuilderEx.CreateMapPoint(ctrpt.X - xdiff, ctrpt.Y - ydiff);
-                    } 
+                    }
                 }
                 else if (double.IsNaN(slope))
                 {
@@ -636,7 +665,7 @@ namespace MaskRaster
                                             {
                                                 // create a container to hold the pixel values
                                                 Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
-    
+
                                                 // if the cursor is within the extent of the raster
                                                 if (GeometryEngine.Instance.Contains(rasterEnvelope, pt))
                                                 {
@@ -651,7 +680,7 @@ namespace MaskRaster
                                                     var mapPt = MapPointBuilderEx.CreateMapPoint(mapPtTupleX, mapPtTupleY);
                                                     bool insidePolygon = GeometryEngine.Instance.Intersects(shape, mapPt);
                                                     */
-    
+
                                                     // retrieve the actual pixel values from the pixelblock representing the red raster band
                                                     pixelArray = pixelBlock.GetPixelData(_bandindex, false);
                                                 }
@@ -670,7 +699,7 @@ namespace MaskRaster
                                             int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
                                             //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
                                             var list_values = new List<double>();
-                                            foreach(var pt_pixelArray in list_array)
+                                            foreach (var pt_pixelArray in list_array)
                                             {
                                                 ind = 0;
                                                 foreach (float v in pt_pixelArray)
@@ -724,7 +753,7 @@ namespace MaskRaster
                                                     b.BCAWSEmaxStatistics.Add(alt.Name, new BCAMATH());
                                                 }
                                                 b.BCAWSEmaxStatistics[alt.Name].SetData(list_values);
-                                            } 
+                                            }
                                             else if (gridDataType == GridDataType.DEPTHMAX)
                                             {
                                                 if (!b.BCADepthmaxStatistics.ContainsKey(alt.Name))
@@ -735,7 +764,7 @@ namespace MaskRaster
                                             }
 
                                             //clean up
-                                            foreach(var pt_pixelArray in list_array)
+                                            foreach (var pt_pixelArray in list_array)
                                             {
                                                 Array.Clear(pt_pixelArray, 0, pt_pixelArray.Length);
                                             }
@@ -837,6 +866,111 @@ namespace MaskRaster
             catch (Exception exc)
             {
                 MessageBox.Show("Exception caught in ReadRaster: " + exc.Message);
+            }
+        }
+
+        /// <summary>
+        /// update footprintLayer's building parcel ID using the intersecting Parcel ID polygon's Parcel ID
+        /// also could consult FixupImportData
+        /// </summary>
+        /// <param name="footprintLayer">Building footprint layer that has outdated Parcel IDs</param>
+        /// <param name="parcelLayer">Up-to-date Parcel ID polygon layer</param>
+        public static async void CrosscheckParcelIDs(FeatureLayer footprintLayer, FeatureLayer parcelLayer)
+        {
+            if (MapView.Active == null)
+            {
+                return;
+            }
+
+            try
+            {
+                BasicFeatureLayer lyr_fp = footprintLayer as BasicFeatureLayer;
+                var numBuildings = await QueuedTask.Run(() => { return (footprintLayer as FeatureLayer).GetTable().GetCount(); });
+                var numParcels = await QueuedTask.Run(() => { return (parcelLayer as FeatureLayer).GetTable().GetCount(); });
+
+                // Working with rasters requires the MCT.
+                ProgressorSource ps = new ProgressorSource($"Updating building parcels in {parcelLayer.Name}: ", false);
+                await QueuedTask.Run(() =>
+                {
+                    var srlatlong = new SpatialReferenceBuilder(4326);
+
+                    ps.Max = (uint)numParcels;
+                    ps.Progressor.Value = 0;
+                    if (footprintLayer.ConnectionStatus == ConnectionStatus.Broken)
+                    {
+                        throw new ApplicationException("Footprint layer connection broken");
+                    }
+
+                    FeatureClass featureParcel = parcelLayer.GetFeatureClass();
+                    FeatureClass featureFP = footprintLayer.GetFeatureClass();
+                    var op = new ArcGIS.Desktop.Editing.EditOperation();
+                    op.Name = "Update building Parcel_ID and Parcel_Hyp attributes";
+                    op.ExecuteMode = ArcGIS.Desktop.Editing.ExecuteModeType.Default;
+                    footprintLayer.SetEditable(true);
+                    using (var rc = featureFP.Search())
+                    {
+                        while (rc.MoveNext())
+                        {
+                            using (var record = rc.Current)
+                            {
+                                Feature f = record as Feature;
+                                Geometry buildingGeom = f.GetShape();
+
+                                //Tip:
+                                //The spatial relation is very important in selection
+                                //In this case, building is smaller than parcel, so has to use 'Within' instead of intersect (when using Intersect, can't retrieve attributes of found feature)
+                                //when reversed search by parcel, then should use 'Intersect' to get the buildings inside a parcel
+                                var parcelRecords = SelectByLocation(parcelLayer as BasicFeatureLayer, buildingGeom, SpatialRelationship.Within);
+
+                                if (parcelRecords != null)
+                                {
+                                    foreach (var parcelRecord in parcelRecords)
+                                    {
+                                        string parcel_hyp = parcelRecord["Parcel_Hyp"] as string;
+                                        string building_hyp = record["Parcel_Hyp"] as string;
+                                        /*
+                                        if (building_hyp as string == "04000-11049-172-00")
+                                        {
+                                            string debug = "stop";
+                                        }
+                                        */
+                                        if (string.Compare(parcel_hyp, building_hyp, StringComparison.OrdinalIgnoreCase) != 0)
+                                        {
+                                            op.Modify(record, "Parcel_Hyp", parcel_hyp);
+                                            op.Modify(record, "Parcel_ID", parcel_hyp.Replace("-",""));
+                                        }
+    
+                                        //only just check/update building using one Parcel once per building
+                                        break;
+                                    }
+                                    
+                                    //clean up
+                                    foreach(var b in parcelRecords)
+                                    {
+                                        b.Dispose();
+                                    }
+                                    parcelRecords.Clear();
+                                }
+                            }
+                            ps.Progressor.Value++;
+                            ps.Progressor.Status = (ps.Progressor.Value * 100 / ps.Max) + @" % Completed";
+                            ps.Progressor.Message = $"Update {footprintLayer.Name} Parcel IDs per Parcel #{ps.Progressor.Value}";
+                        }
+                        if (!op.IsEmpty)
+                        {
+                            if (!op.Execute())
+                            {
+                                MessageBox.Show("Edit failed.");
+                            }
+                        }
+                    }
+                    //this some how couldn't trigger save changes, had to manually save change from ArcGIS Pro interface!
+                    footprintLayer.SetEditable(false);
+                }, ps.Progressor);
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show("Exception caught in CrosscheckParcelIDs: " + exc.Message);
             }
         }
 

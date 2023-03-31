@@ -39,6 +39,7 @@
         <Button x:Name="btnReadDDFs" Content="Read Depth-Damage Functions" HorizontalAlignment="Left" Margin="15,372,0,0" VerticalAlignment="Top" Width="187" Click="btnReadDDFs_Click"/>
         <Button x:Name="btnReadParcelTRCNs" Content="Read Parcel TRCNs" HorizontalAlignment="Left" Margin="249,372,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.572,0.139" Click="btnReadParcelTRCNs_Click" Width="147"/>
         <Label x:Name="lblProgress" Content="Progress" HorizontalAlignment="Left" Margin="15,460,0,0" VerticalAlignment="Top" Height="26" Grid.RowSpan="2" Width="65"/>
+        <Button x:Name="btnCustomOpn" Content="Custom Operation" HorizontalAlignment="Left" Margin="622,416,0,0" VerticalAlignment="Top" Width="158" Click="btnCustomOpn_Click"/>
 
     </Grid>
 </Window>
