@@ -13,6 +13,7 @@ namespace MaskRaster
     {
         public static string basefolder;
         public static string basefolderfia;
+        public static string basefolderfw;
         public static EREADRASTERMETHOD readmethod;
         public static EINUNDATIONEVALUATIONLOCATION evalmethod;
 
@@ -96,10 +97,41 @@ namespace MaskRaster
             return "";
         }
 
+        public string fullpathfloodway(GridDataType datatype)
+        {
+            string fp = "";
+            switch(datatype)
+            {
+                case GridDataType.WSEMAX:
+                    if (!string.IsNullOrEmpty(PathWSEMAX))
+                        fp = System.IO.Path.Combine(basefolderfw, PathWSEMAX);
+                    break;
+                case GridDataType.DEPTHMAX:
+                    if (!string.IsNullOrEmpty(PathDEPTHMAX))
+                        fp = System.IO.Path.Combine(basefolderfw, PathDEPTHMAX);
+                    break;
+                case GridDataType.TERRAIN:
+                    if (!string.IsNullOrEmpty(PathTERRAIN))
+                        fp = System.IO.Path.Combine(basefolderfw, PathTERRAIN);
+                    break;
+            }
+            if (System.IO.File.Exists(fp))
+            {
+                return fp;
+            }
+            return "";
+        }
+
         public string layerName(GridDataType datatype) 
         {
             //ArcGIS Pro will display raster layer with its full filename with extension
             return System.IO.Path.GetFileName(fullpath(datatype));
+        }
+
+        public string layerNameFloodway(GridDataType datatype) 
+        {
+            //ArcGIS Pro will display raster layer with its full filename with extension
+            return System.IO.Path.GetFileName(fullpathfloodway(datatype));
         }
     }
 }

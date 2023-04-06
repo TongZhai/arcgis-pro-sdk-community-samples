@@ -28,11 +28,13 @@ namespace MaskRaster
     {
         STRUCTURECENTER,
         STRUCTURESURROUND,
+        STRUCTUREALONG,
     }
 
     internal class Util
     {
         static string _configfile = @"C:\dev\arcgis-pro-sdk-community-samples\Raster\MaskRaster\ConfigBCA.daml";
+        static string _configfileFloodway = @"C:\dev\arcgis-pro-sdk-community-samples\Raster\MaskRaster\ConfigUtility.daml";
 
 
         /// <summary>
@@ -52,7 +54,6 @@ namespace MaskRaster
         /// <summary>
 		/// returns a tuple with version and desktopVersion using the given addin file path
 		/// </summary>
-		/// <param name="fileName">file path (partial) of esriAddinX package</param>
 		/// <returns>tuple: version, desktopVersion</returns>
 		public static List<Alternative> GetConfigDaml()
         {
@@ -182,6 +183,87 @@ namespace MaskRaster
                 throw new Exception($@"Unable to parse config.daml {_configfile}: {ex.Message}");
             }
         }
+
+        /*
+         * Every time this is called, the list of Floodway alternatives will be read anew
+         */
+		public static List<Alternative> GetConfigDamlFloodway()
+        {
+            XmlDocument xDoc = new XmlDocument();
+            try
+            {
+                string daml = string.Empty;
+                using (StreamReader sr = new StreamReader(_configfileFloodway))
+                {
+                    daml = sr.ReadToEnd();
+                    xDoc.LoadXml(daml);
+                }
+
+                XmlNodeList alt_list_block = xDoc.GetElementsByTagName("SMCFWAlternatives");
+                Alternative.basefolderfw = alt_list_block[0].Attributes["basefolder"].Value;
+                var fw_readlmethodstr = alt_list_block[0].Attributes["readmethod"].Value;
+                var fw_readlmethod = EREADRASTERMETHOD.BLOCKAVERAGE;
+                switch (fw_readlmethodstr)
+                {
+                    case nameof(EREADRASTERMETHOD.POINTDIRECT):
+                        fw_readlmethod = EREADRASTERMETHOD.POINTDIRECT;
+                        break;
+                    case nameof(EREADRASTERMETHOD.BLOCKAVERAGE):
+                        fw_readlmethod = EREADRASTERMETHOD.BLOCKAVERAGE;
+                        break;
+                }
+                var fw_evalmethodstr = alt_list_block[0].Attributes["floodevalmethod"].Value;
+                var fw_evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER;
+                switch (fw_evalmethodstr)
+                {
+                    case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER):
+                        fw_evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURECENTER;
+                        break;
+                    case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND):
+                        fw_evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND;
+                        break;
+                    case nameof(EINUNDATIONEVALUATIONLOCATION.STRUCTUREALONG):
+                        fw_evalmethod = EINUNDATIONEVALUATIONLOCATION.STRUCTUREALONG;
+                        break;
+                }
+
+                var offset = alt_list_block[0].Attributes["floodevalstructureoffsetinfeet"].Value;
+                double readingoffsetinfeet;
+                double.TryParse(offset, out readingoffsetinfeet);
+                List<Alternative> fw_alts = new List<Alternative>();
+                foreach (XmlNode xalt in alt_list_block[0])
+                {
+                    string alt_id = xalt.Attributes["id"].Value;
+                    string alt_data_type = xalt.Attributes["type"].Value;
+                    string alt_path = xalt.ChildNodes[0].InnerText;
+                    Alternative alt = fw_alts.Where(a => a.Name == alt_id).FirstOrDefault();
+                    if (alt == null)
+                    {
+                        alt = new Alternative(alt_id);
+                        fw_alts.Add(alt);
+                    }
+                    switch (alt_data_type)
+                    {
+                        case nameof(GridDataType.WSEMAX):
+                            alt.PathWSEMAX = alt_path;
+                            break;
+                        case nameof(GridDataType.DEPTHMAX):
+                            alt.PathDEPTHMAX = alt_path;
+                            break;
+                        case nameof(GridDataType.TERRAIN):
+                            alt.PathTERRAIN = alt_path;
+                            break;
+                    }
+                }
+                
+                return fw_alts;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($@"Unable to parse config.daml {_configfile}: {ex.Message}");
+            }
+        }
+        
 
         public static void SetupBCATemplate()
         {

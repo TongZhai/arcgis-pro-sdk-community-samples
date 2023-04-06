@@ -27,7 +27,6 @@
         <Button x:Name="btnBrowseBCATemplate" Content="Browse" HorizontalAlignment="Left" Margin="651,193,0,0" VerticalAlignment="Top" Width="129" Click="btnBrowseBCATemplate_Click"/>
         <Button x:Name="btnSetupBCAInputsv5" Content="Write Riverine Flood Input v5" HorizontalAlignment="Left" Margin="622,270,0,0" VerticalAlignment="Top" Click="btnSetupBCAInputsv5_Click"/>
         <Button x:Name="btnSetupBCAInputsv6" Content="Write Riverine Flood Input v6" HorizontalAlignment="Left" Margin="622,367,0,0" VerticalAlignment="Top" Click="btnSetupBCAInputsv6_Click" RenderTransformOrigin="0.523,3.359"/>
-        <ProgressBar x:Name="BCAInputsProgress" HorizontalAlignment="Left" Height="23" Margin="85,463,0,0" VerticalAlignment="Top" Width="695"/>
         <Label x:Name="lblAlternatives" Content="Alternatives:" HorizontalAlignment="Left" Margin="105,219,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.036,-0.54"/>
         <ComboBox x:Name="cboAlternatives" HorizontalAlignment="Left" Margin="185,223,0,0" VerticalAlignment="Top" Width="334" RenderTransformOrigin="0.482,-0.398"/>
         <CheckBox x:Name="chkAllAlternatives" Content="Include All Alternatives" HorizontalAlignment="Left" Margin="567,227,0,0" VerticalAlignment="Top"/>
@@ -38,8 +37,10 @@
         <TextBox x:Name="txtFIAOutputDir" HorizontalAlignment="Left" Margin="153,328,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="452" IsEnabled="False"/>
         <Button x:Name="btnReadDDFs" Content="Read Depth-Damage Functions" HorizontalAlignment="Left" Margin="15,372,0,0" VerticalAlignment="Top" Width="187" Click="btnReadDDFs_Click"/>
         <Button x:Name="btnReadParcelTRCNs" Content="Read Parcel TRCNs" HorizontalAlignment="Left" Margin="249,372,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.572,0.139" Click="btnReadParcelTRCNs_Click" Width="147"/>
-        <Label x:Name="lblProgress" Content="Progress" HorizontalAlignment="Left" Margin="15,460,0,0" VerticalAlignment="Top" Height="26" Grid.RowSpan="2" Width="65"/>
         <Button x:Name="btnCustomOpn" Content="Custom Operation" HorizontalAlignment="Left" Margin="622,416,0,0" VerticalAlignment="Top" Width="158" Click="btnCustomOpn_Click"/>
+        <Button x:Name="btnLoadFWWSEmax" Content="Load Floodway WSEmax Grids" HorizontalAlignment="Left" Margin="260,416,0,0" VerticalAlignment="Top" Click="btnLoadFWWSEmax_Click" RenderTransformOrigin="-0.121,0.712"/>
+        <Button x:Name="btnReportWSEmax" Content="Report WSEmax at Profile Lines" HorizontalAlignment="Left" Margin="436,416,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.05,0.628" Click="btnReportWSEmax_Click"/>
+        <TextBox x:Name="txtReport" HorizontalAlignment="Left" Margin="21,456,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="759" Height="47"/>
 
     </Grid>
 </Window>

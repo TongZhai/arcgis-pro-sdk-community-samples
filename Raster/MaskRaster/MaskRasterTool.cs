@@ -88,6 +88,7 @@ namespace MaskRaster
                 var alts = Util.GetConfigDaml();
                 MaskRasterVM.Alternatives = alts;
                 Building.Alternatives = alts;
+                MaskRasterVM.Alternatives_FW = Util.GetConfigDamlFloodway();
 
                 var frmSelect = new frmSelectLayer(alts);
                 frmSelect.ShowDialog();

@@ -343,11 +343,12 @@ namespace MaskRaster
 
         }
 
-        public static void SetupBCAInputs(ProgressBar pb, List<Alternative> alts, Alternative selectedAlternative)
+        public static void SetupBCAInputs(List<Alternative> alts, Alternative selectedAlternative)
         {
-            pb.Minimum = 0;
-            pb.Maximum = 4;
-            pb.Value = 1;
+            //ProgressBar pb;
+            //pb.Minimum = 0;
+            //pb.Maximum = 4;
+            //pb.Value = 1;
 
             int column;
             int row;
@@ -1666,22 +1667,22 @@ namespace MaskRaster
                         break;
                 }
             }
-            pb.Value++;
+            //pb.Value++;
 
             //Flood Before Mitigation Setup
             worksheet = BCAWorkbook.Worksheets[BCA_Worksheet2] as Worksheet;
             SetupRiverineFloodTemplateFloodBeforeAfterMitigation(worksheet, building_keys, "XYr_Current");
-            pb.Value++;
+            //pb.Value++;
 
             //Flood After Mitigation Setup
             worksheet = BCAWorkbook.Worksheets[BCA_Worksheet3] as Worksheet;
             SetupRiverineFloodTemplateFloodBeforeAfterMitigation(worksheet, building_keys, selectedAlternative.Name);
-            pb.Value++;
+            //pb.Value++;
 
             //Critical Facility Info Setup
             worksheet = BCAWorkbook.Worksheets[BCA_Worksheet4] as Worksheet;
             SetupRiverineFloodTemplateCriticalFacilityInfo(worksheet, building_keys);
-            pb.Value++;
+            //pb.Value++;
 
             //BCAWorkbook.Close();
             //App.Quit();

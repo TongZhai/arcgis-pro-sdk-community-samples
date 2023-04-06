@@ -12,6 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="ConfigBCA.daml" />
+    <None Remove="ConfigUtility.daml" />
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="Microsoft.Office.Interop.Excel">
@@ -72,6 +73,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ConfigUtility.daml" />
     <Content Include="ConfigBCA.daml" />
     <Content Include="Config.daml" />
     <Content Include="Images\AddInDesktop16.png" />
@@ -93,12 +95,12 @@
     <None Include="MaskRaster (C#).md" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BASINS\atcControls\atcControls-NET6.vbproj" />
-    <ProjectReference Include="..\..\..\BASINS\atcData\atcData-NET6.vbproj" />
-    <ProjectReference Include="..\..\..\BASINS\atcTimeseriesMath\atcTimeseriesMath-NET6.vbproj" />
-    <ProjectReference Include="..\..\..\BASINS\atcTimeseriesStatistics\atcTimeseriesStatistics-NET6.vbproj" />
-    <ProjectReference Include="..\..\..\BASINS\atcUtility\atcUtility-NET6.vbproj" />
-    <ProjectReference Include="..\..\..\BASINS\MapWinUtility\MapWinUtility-NET6.vbproj" />
+    <ProjectReference Include="..\..\..\BASINS\atcControls\atcControls-DSNET48.vbproj" />
+    <ProjectReference Include="..\..\..\BASINS\atcData\atcData-DSNET48.vbproj" />
+    <ProjectReference Include="..\..\..\BASINS\atcTimeseriesMath\atcTimeseriesMath-DSNET48.vbproj" />
+    <ProjectReference Include="..\..\..\BASINS\atcTimeseriesStatistics\atcTimeseriesStatistics-DSNET48.vbproj" />
+    <ProjectReference Include="..\..\..\BASINS\atcUtility\atcUtility-DSNET48.vbproj" />
+    <ProjectReference Include="..\..\..\BASINS\MapWinUtility\MapWinUtility-DSNET48.vbproj" />
   </ItemGroup>
   <Import Project="C:\Program Files\ArcGIS\Pro\bin\Esri.ProApp.SDK.Desktop.targets" Condition="Exists('C:\Program Files\ArcGIS\Pro\bin\Esri.ProApp.SDK.Desktop.targets') AND !Exists('Esri.ArcGISPro.Extensions.targets')" />
 </Project>

@@ -22,6 +22,12 @@ using ArcGIS.Desktop.Mapping;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Framework.Dialogs;
 using System.IO;
+using ArcGIS.Desktop.Internal.Mapping.Symbology;
+using System.Text;
+using System.Xml;
+using System.Text.Json.Nodes;
+using System.Text.Json;
+using ArcGIS.Core.CIM;
 
 namespace MaskRaster
 {
@@ -33,6 +39,11 @@ namespace MaskRaster
         static int _bandindex = 0;
 
         public static List<Alternative> Alternatives;
+        public static List<Alternative> Alternatives_FW;
+
+        public static string ReportFW;
+
+        public static Dictionary<string, Dictionary<string, List<double>>> Readings_WSEMax; //profile name, dictionary<alternative, list<double>>
 
         public static PixelBlock GetPixelBlock(Raster inputRaster, Geometry geometry)
         {
@@ -512,6 +523,20 @@ namespace MaskRaster
 
             return list;
         }
+        public static List<MapPoint> GetMidPoints(Geometry shape)
+        {
+            List<MapPoint> list = new List<MapPoint>();
+            var line = shape as Polyline;
+            for (int i = 0; i < line.Points.Count - 1; i++)
+            {
+                var p1 = line.Points[i];
+                var p2 = line.Points[i + 1];
+                var ctrpt = MapPointBuilderEx.CreateMapPoint((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
+                list.Add(ctrpt);
+            }
+
+            return list;
+        }
 
         /// <summary>
         /// Read raster pixels values per building footprint, based on the building footprint geometries,
@@ -567,8 +592,10 @@ namespace MaskRaster
                         // If the map spatial reference is different from the spatial reference of the input raster,
                         // set the map spatial reference on the input raster. This will ensure the map points are 
                         // correctly reprojected to image points.
-                        if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
-                            inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
+                        // Actually below is kinda of dangerous, so make sure the raster and vectors are of the same projection
+                        // before getting here
+                        //if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
+                        //    inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
 
                         // reproject the raster envelope to match the map spatial reference
                         var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
@@ -937,15 +964,15 @@ namespace MaskRaster
                                         if (string.Compare(parcel_hyp, building_hyp, StringComparison.OrdinalIgnoreCase) != 0)
                                         {
                                             op.Modify(record, "Parcel_Hyp", parcel_hyp);
-                                            op.Modify(record, "Parcel_ID", parcel_hyp.Replace("-",""));
+                                            op.Modify(record, "Parcel_ID", parcel_hyp.Replace("-", ""));
                                         }
-    
+
                                         //only just check/update building using one Parcel once per building
                                         break;
                                     }
-                                    
+
                                     //clean up
-                                    foreach(var b in parcelRecords)
+                                    foreach (var b in parcelRecords)
                                     {
                                         b.Dispose();
                                     }
@@ -972,6 +999,266 @@ namespace MaskRaster
             {
                 MessageBox.Show("Exception caught in CrosscheckParcelIDs: " + exc.Message);
             }
+        }
+
+        /// <summary>
+        /// Read WSE raster pixels values along some profile lines
+        /// </summary>
+        public static async void ReadWSEs(FeatureLayer profileLayer, GridDataType gridDataType, int bandindex = 0)
+        {
+            if (MapView.Active == null)
+            {
+                return;
+            }
+            _bandindex = bandindex;
+            if (_bandindex < 0)
+            {
+                MessageBox.Show($"Should only read from first band of raster dataset.");
+                return;
+            }
+
+            try
+            {
+                BasicFeatureLayer lyr_profile = profileLayer as BasicFeatureLayer;
+                var numProfiles = await QueuedTask.Run(() => { return (profileLayer as FeatureLayer).GetTable().GetCount(); });
+
+                //get all raster layers
+                var lyr_rasters = MapView.Active.Map.GetLayersAsFlattenedList().OfType<RasterLayer>().ToList();
+
+                Readings_WSEMax = new Dictionary<string, Dictionary<string, List<double>>>(); //profile name, dictionary<alternative, list<double>>
+
+                // iterate through all grids
+                foreach (Layer firstSelectedLayer in lyr_rasters)
+                {
+                    // Working with rasters requires the MCT.
+                    ProgressorSource ps = new ProgressorSource($"Reading {firstSelectedLayer.Name} grid: ", false);
+                    await QueuedTask.Run(() =>
+                    {
+                        var srlatlong = new SpatialReferenceBuilder(4326);
+
+                        ps.Max = (uint)numProfiles;
+                        ps.Progressor.Value = 0;
+                        if (profileLayer.ConnectionStatus == ConnectionStatus.Broken)
+                            throw new ApplicationException("Profile layer connection broken");
+
+                        #region Get the raster dataset from the currently selected layer
+                        // Get the raster layer from the selected layer.
+                        Raster inputRaster = (firstSelectedLayer as RasterLayer).GetRaster();
+                        // Get the basic raster dataset from the raster.
+                        BasicRasterDataset basicRasterDataset = inputRaster.GetRasterDataset();
+                        // If the map spatial reference is different from the spatial reference of the input raster,
+                        // set the map spatial reference on the input raster. This will ensure the map points are 
+                        // correctly reprojected to image points.
+                        //if (MapView.Active.Map.SpatialReference.Name != inputRaster.GetSpatialReference().Name)
+                        //    inputRaster.SetSpatialReference(MapView.Active.Map.SpatialReference);
+
+                        // reproject the raster envelope to match the map spatial reference
+                        var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
+                        #endregion
+
+                        //get the matching alternative
+                        var dataConnJson = firstSelectedLayer.GetDataConnection().ToJson();
+                        //var dataConnObj = JsonSerializer.Deserialize<LayerConnectionJson>(dataConnJson);
+                        var dataConnStr = (firstSelectedLayer.GetDataConnection() as CIMStandardDataConnection).WorkspaceConnectionString;
+                        var dataSetName = (firstSelectedLayer.GetDataConnection() as CIMStandardDataConnection).Dataset;
+                        var fullPathRaster = Path.Combine(dataConnStr.Substring("DATABASE=".Length), dataSetName);
+                        var alt = Alternatives_FW.Where(a => a.fullpathfloodway(gridDataType) == fullPathRaster).FirstOrDefault();
+
+                        if (alt != null)
+                        {
+                            //if the alt associated with a raster data layer is present, i.e. there is no alt that has that raster data layer
+                            #region read raster values
+
+                            FeatureClass featProfile = profileLayer.GetFeatureClass();
+                            using (var rc = featProfile.Search())
+                            {
+                                while (rc.MoveNext())
+                                {
+                                    using (var record = rc.Current)
+                                    {
+                                        Feature f = record as Feature;
+                                        Geometry shape = f.GetShape();
+                                        ReadOnlyPointCollection shape_vertices = (shape as Polyline).Points;
+                                        string profileName = Convert.ToString(record["Name"]);
+
+                                        if (!Readings_WSEMax.ContainsKey(profileName))
+                                        {
+                                            Readings_WSEMax.Add(profileName, new Dictionary<string, List<double>>());
+                                        }
+
+                                        if (!Readings_WSEMax[profileName].ContainsKey(alt.Name))
+                                        {
+                                            Readings_WSEMax[profileName].Add(alt.Name, new List<double>());
+                                        }
+                                        else
+                                        {
+                                            //always read anew
+                                            Readings_WSEMax[profileName][alt.Name] = new List<double>();
+                                        }
+
+                                        /*
+                                        if (shape.GeometryType == GeometryType.Polygon && Alternative.evalmethod == EINUNDATIONEVALUATIONLOCATION.STRUCTURESURROUND)
+                                        {
+                                            var polygon = shape as Polygon;
+                                            shape_vertices = polygon.Points;
+                                        }
+                                        */
+
+                                        //Method 2: read raster data by a point with fixed window
+                                        // create a pixelblock representing a 3x3 window to hold the raster values
+                                        var pixelBlock = inputRaster.CreatePixelBlock(3, 3);
+                                        var shape_ctrpt = shape.Extent.CenterCoordinate.ToMapPoint();
+
+                                        var list_points = new List<MapPoint>();
+                                        if (shape_vertices != null && shape_vertices.Count > 0)
+                                        {
+                                            //we still use this test here such that be sure the footprint is a polygon from above
+                                            list_points = GetMidPoints(shape);
+
+                                        }
+                                        else
+                                        {
+                                            list_points.Add(shape_ctrpt);
+                                        }
+
+                                        var list_array = new List<Array>();
+                                        foreach (var pt in list_points)
+                                        {
+                                            // create a container to hold the pixel values
+                                            Array pixelArray = new object[pixelBlock.GetWidth(), pixelBlock.GetHeight()];
+
+                                            // if the cursor is within the extent of the raster
+                                            if (GeometryEngine.Instance.Contains(rasterEnvelope, pt))
+                                            {
+                                                // find the map location expressed in row,column of the raster
+                                                var pixelLocationAtRaster = inputRaster.MapToPixel(pt.X, pt.Y);
+                                                // fill the pixelblock with the pointer location starting at top left corner (-1, -1)
+                                                // then pixel cell index=4 will be at the pt
+                                                inputRaster.Read(pixelLocationAtRaster.Item1 - 1, pixelLocationAtRaster.Item2 - 1, pixelBlock);
+                                                
+                                                // retrieve the actual pixel values from the pixelblock representing the red raster band
+                                                pixelArray = pixelBlock.GetPixelData(_bandindex, false);
+                                            }
+                                            else
+                                            {
+                                                // fill the container with 0s
+                                                Array.Clear(pixelArray, 0, pixelArray.Length);
+                                            }
+
+                                            list_array.Add(pixelArray);
+                                        }
+
+                                        double ras_val = 0;
+                                        int num = 0;
+                                        int ind = 0;
+                                        int centerIndex = 4; // in a 3 by 3 pixel block, starting at -1 row and -1 column
+                                                             //int centerIndex = 0; // in a 3 by 3 pixel block, starting at 0 row and 0 column
+                                        var list_values = new List<double>();
+                                        foreach (var pt_pixelArray in list_array)
+                                        {
+                                            ind = 0;
+                                            foreach (float v in pt_pixelArray)
+                                            {
+                                                if (v < 0) { }
+                                                else { list_values.Add(v); }
+
+                                                if (Alternative.readmethod == EREADRASTERMETHOD.POINTDIRECT)
+                                                {
+                                                    if (ind == centerIndex)
+                                                    {
+                                                        if (ras_val < 0)
+                                                        {
+                                                            // skip points outside of flood water
+                                                        }
+                                                        else
+                                                        {
+                                                            ras_val += v;
+                                                            num++;
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // skip points outside of flood water
+                                                    if (v >= 0)
+                                                    {
+                                                        ras_val += v;
+                                                        num++;
+                                                    }
+                                                }
+                                                ind++;
+                                            }
+                                        }
+                                        Readings_WSEMax[profileName][alt.Name].AddRange(list_values);
+
+                                        if (num > 0)
+                                        {
+                                            ras_val /= num;
+                                        }
+                                        else
+                                        {
+                                            ras_val = -9999;
+                                        }
+                                        //clean up
+                                        foreach (var pt_pixelArray in list_array)
+                                        {
+                                            Array.Clear(pt_pixelArray, 0, pt_pixelArray.Length);
+                                        }
+                                        list_array.Clear();
+                                        list_points.Clear();
+                                        list_values.Clear();
+                                    }
+                                    ps.Progressor.Value++;
+                                    ps.Progressor.Status = (ps.Progressor.Value * 100 / ps.Max) + @" % Completed";
+                                    ps.Progressor.Message = $"Read {firstSelectedLayer.Name} per Building #{ps.Progressor.Value}";
+                                }
+                            }
+                            #endregion
+                        }
+                    }, ps.Progressor);
+                    System.Diagnostics.Debug.WriteLine($"Read Raster: {firstSelectedLayer.Name}\n");
+                }
+                //ReportFW = WriteWSEMaxTable();
+                //MessageBox.Show(ReportFW);
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show("Exception caught in ReadRaster: " + exc.Message);
+            }
+        }
+
+        public static string WriteWSEMaxTable()
+        {
+            if (Readings_WSEMax == null)
+            {
+                return "";
+            }
+
+            var sb = new StringBuilder();
+            sb.Append("Profile,");
+            foreach (var profilekey in Readings_WSEMax?.Keys)
+            {
+                foreach(var altkey in Readings_WSEMax[profilekey]?.Keys)
+                {
+                    sb.Append($"{altkey},");
+                }
+                break;
+            }
+            sb.Append('\n');
+            foreach (var profilekey in Readings_WSEMax?.Keys)
+            {
+                sb.Append($"{profilekey},");
+                foreach(var altkey in Readings_WSEMax[profilekey]?.Keys)
+                {
+                    var list_value = Readings_WSEMax[profilekey][altkey];
+                    sb.Append($"{list_value.Max()},");
+                }
+                sb.Append('\n');
+            }
+            sb.AppendLine();
+
+            return sb.ToString();
         }
 
         /// <summary>

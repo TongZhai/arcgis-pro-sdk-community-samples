@@ -168,7 +168,7 @@ namespace MaskRaster
         private void btnSetupBCAInputsv5_Click(object sender, RoutedEventArgs e)
         {
             BCA.OpenBCATemplateFile(txtBCARiverineFloodTemplateFilePath.Text);
-            BCA.SetupBCAInputs(BCAInputsProgress, _Alternatives, cboAlternatives.SelectedItem as Alternative);
+            BCA.SetupBCAInputs(_Alternatives, cboAlternatives.SelectedItem as Alternative);
         }
 
         private void btnSetupBCAInputsv6_Click(object sender, RoutedEventArgs e)
@@ -271,6 +271,7 @@ namespace MaskRaster
 
         private async Task<string> ReadTRCNs()
         {
+            /*
             BCAInputsProgress.Minimum = 0;
             BCAInputsProgress.Maximum = 100;
             BCAInputsProgress.Value = 0;
@@ -281,6 +282,7 @@ namespace MaskRaster
                //txtResult.Text += e.Text;
             };
             //return await BCA.SetupParcels(myprogress);
+            */
             return "";
         }
 
@@ -306,6 +308,8 @@ namespace MaskRaster
         private void btnCustomOpn_Click(object sender, RoutedEventArgs e)
         {
             var mapView = MapView.Active;
+
+            /* Task 1. cross-check building's Parcel_ID and Parcel_Hyp againt City provided Parcel shapefile
             var lyr_list_footprint = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList().Where(f => f.Name.StartsWith("BuildingFootprints_SMC"));
             var lyr_list_parcel = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList().Where(f => f.Name.StartsWith("MissingParcels_RESPEC"));
             if (lyr_list_footprint.Any() && lyr_list_parcel.Any())
@@ -320,6 +324,48 @@ namespace MaskRaster
                     break;
                 }
             }
+            */
+
+            /* Task 2. For floodway analysis, read the alternative floodway model's WSEmax at all of the profile locations */
+            var lyr_profile = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList().Where(f => f.Name.StartsWith("Floodway_Profiles")).FirstOrDefault();
+            if (lyr_profile != null)
+            {
+                MaskRasterVM.ReadWSEs(lyr_profile, GridDataType.WSEMAX);
+                System.Windows.MessageBox.Show("Done.");
+            }
+        }
+
+        private void btnLoadFWWSEmax_Click(object sender, RoutedEventArgs e)
+        {
+            if (MapView.Active == null)
+            {
+                System.Windows.MessageBox.Show("No active ArcGIS Pro Mapview available.");
+                return;
+            }
+            if (MaskRasterVM.Alternatives_FW == null || MaskRasterVM.Alternatives_FW.Count == 0)
+            {
+                System.Windows.MessageBox.Show("No Floodway Alternatives available.");
+                return;
+            }
+
+            var layers = MapView.Active.Map.GetLayersAsFlattenedList(); //.OfType<FeatureLayer>().Where(fl => fl.Name.Contains(xlsLayerName)).FirstOrDefault();
+            int numLayersAdded = 0;
+
+            var datatype = GridDataType.WSEMAX;
+            foreach (var alt in MaskRasterVM.Alternatives_FW)
+            {
+                if (alt.isPathSet(datatype) && layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
+                {
+                    AddLayer(alt.fullpathfloodway(datatype));
+                    numLayersAdded++;
+                }
+            }
+            System.Windows.MessageBox.Show($"Number of layers added: {numLayersAdded}.");
+        }
+
+        private void btnReportWSEmax_Click(object sender, RoutedEventArgs e)
+        {
+            txtReport.Text = MaskRasterVM.WriteWSEMaxTable();
         }
     }
 
