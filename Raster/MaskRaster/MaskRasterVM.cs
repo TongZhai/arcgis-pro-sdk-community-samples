@@ -602,8 +602,12 @@ namespace MaskRaster
                         var rasterEnvelope = GeometryEngine.Instance.Project(inputRaster.GetExtent(), inputRaster.GetSpatialReference());
                         #endregion
 
-                        //get the matching alternative
-                        var alt = Alternatives.Where(a => a.layerName(gridDataType) == firstSelectedLayer.Name).FirstOrDefault();
+                        //get the matching alternative, use full data path, more accurate in case the file names are the same
+                        var dataConnStr = (firstSelectedLayer.GetDataConnection() as CIMStandardDataConnection).WorkspaceConnectionString;
+                        var dataSetName = (firstSelectedLayer.GetDataConnection() as CIMStandardDataConnection).Dataset;
+                        var fullPathRaster = Path.Combine(dataConnStr.Substring("DATABASE=".Length), dataSetName);
+                        var alt = Alternatives_FW.Where(a => a.fullpath(gridDataType) == fullPathRaster).FirstOrDefault();
+                        //var alt = Alternatives.Where(a => a.layerName(gridDataType) == firstSelectedLayer.Name).FirstOrDefault();
                         if (alt != null)
                         {
                             //if the alt associated with a raster data layer is present, i.e. there is no alt that has that raster data layer
