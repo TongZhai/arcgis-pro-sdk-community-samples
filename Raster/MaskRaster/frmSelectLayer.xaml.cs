@@ -305,7 +305,7 @@ namespace MaskRaster
         /***
          * Perform one time tasks on as needed basis
          * ***/
-        private void btnCustomOpn_Click(object sender, RoutedEventArgs e)
+        private async void btnCustomOpn_Click(object sender, RoutedEventArgs e)
         {
             var mapView = MapView.Active;
 
@@ -330,8 +330,15 @@ namespace MaskRaster
             var lyr_profile = mapView.Map.GetLayersAsFlattenedList().OfType<FeatureLayer>().ToList().Where(f => f.Name.StartsWith("Floodway_Profiles")).FirstOrDefault();
             if (lyr_profile != null)
             {
-                MaskRasterVM.ReadWSEs(lyr_profile, GridDataType.WSEMAX);
-                System.Windows.MessageBox.Show("Done.");
+                var success = await MaskRasterVM.ReadWSEs(lyr_profile, GridDataType.WSEMAX);
+                if (success)
+                {
+                    System.Windows.MessageBox.Show("Done.");
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("Failed.");
+                }
             }
         }
 

@@ -28,6 +28,7 @@ using System.Xml;
 using System.Text.Json.Nodes;
 using System.Text.Json;
 using ArcGIS.Core.CIM;
+using System.Threading.Tasks;
 
 namespace MaskRaster
 {
@@ -1004,17 +1005,17 @@ namespace MaskRaster
         /// <summary>
         /// Read WSE raster pixels values along some profile lines
         /// </summary>
-        public static async void ReadWSEs(FeatureLayer profileLayer, GridDataType gridDataType, int bandindex = 0)
+        public static async Task<bool> ReadWSEs(FeatureLayer profileLayer, GridDataType gridDataType, int bandindex = 0)
         {
             if (MapView.Active == null)
             {
-                return;
+                return false;
             }
             _bandindex = bandindex;
             if (_bandindex < 0)
             {
                 MessageBox.Show($"Should only read from first band of raster dataset.");
-                return;
+                return false;
             }
 
             try
@@ -1221,11 +1222,13 @@ namespace MaskRaster
                 }
                 //ReportFW = WriteWSEMaxTable();
                 //MessageBox.Show(ReportFW);
+                return true;
             }
             catch (Exception exc)
             {
                 MessageBox.Show("Exception caught in ReadRaster: " + exc.Message);
             }
+            return false;
         }
 
         public static string WriteWSEMaxTable()
@@ -1252,7 +1255,21 @@ namespace MaskRaster
                 foreach(var altkey in Readings_WSEMax[profilekey]?.Keys)
                 {
                     var list_value = Readings_WSEMax[profilekey][altkey];
-                    sb.Append($"{list_value.Max()},");
+                    if (list_value == null)
+                    {
+                        sb.Append($"NoData,");
+                    }
+                    else
+                    {
+                        if (list_value.Count > 0)
+                        {
+                            sb.Append($"{list_value.Max()},");
+                        }
+                        else
+                        {
+                            sb.Append($"NoData,");
+                        }
+                    }
                 }
                 sb.Append('\n');
             }
