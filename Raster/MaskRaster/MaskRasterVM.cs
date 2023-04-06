@@ -1267,7 +1267,7 @@ namespace MaskRaster
                     {
                         if (list_value.Count > 0)
                         {
-                            sb.Append($"{list_value.Max()},");
+                            sb.Append($"{list_value.Average()},");
                         }
                         else
                         {
