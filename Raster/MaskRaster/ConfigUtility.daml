@@ -17,6 +17,7 @@ limitations under the License.
   <SMCFWAlternatives id="Alternatives" readmethod="BLOCKAVERAGE" floodevalmethod="STRUCTUREALONG" floodevalstructureoffsetinfeet="3"  basefolder="C:\Data\SixMileCreek\RAS\B1_floodway\">
     <Alternative type="WSEMAX" id="F.W.1" description="FEMA B1 Floodway">1PACFW\WSE (Max).vrt</Alternative>
     <Alternative type="WSEMAX" id="F.W.2" description="FEMA B2 Floodway">1PACFWB2\WSE (Max).vrt</Alternative>
+    <Alternative type="WSEMAX" id="F.W.3" description="A third Floodway">1PACFW3\WSE (Max).vrt</Alternative>
     <Alternative type="WSEMAX" id="Base1" description="FEMA 1PAC clipped to SMC limited">SMC_FW_clipped\WSE (Max).vrt</Alternative>
     <Alternative type="WSEMAX" id="Base2" description="FEMA 1PAC clipped no smaller culvert on Hwy14 Bypass">SMCclippedB3\WSE (Max).vrt</Alternative>
     <Alternative type="WSEMAX" id="Base3" description="FEMA 1PAC clipped no Hwy14Bypass 42in and no Hwy14 60in culverts">SMCclippedBase3\WSE (Max).vrt</Alternative>
