@@ -21,5 +21,6 @@ limitations under the License.
     <Alternative type="WSEMAX" id="Base1" description="FEMA 1PAC clipped to SMC limited">SMC_FW_clipped\WSE (Max).vrt</Alternative>
     <Alternative type="WSEMAX" id="Base2" description="FEMA 1PAC clipped no smaller culvert on Hwy14 Bypass">SMCclippedB3\WSE (Max).vrt</Alternative>
     <Alternative type="WSEMAX" id="Base3" description="FEMA 1PAC clipped no Hwy14Bypass 42in and no Hwy14 60in culverts">SMCclippedBase3\WSE (Max).vrt</Alternative>
+    <Alternative type="WSEMAX" id="Base4" description="FEMA 1PAC clipped Hwy14Bypass 42in and 60in culverts as culverts">SMC_FW_Base4\WSE (Max).vrt</Alternative>
   </SMCFWAlternatives>
 </BCAUtil>

@@ -32,6 +32,7 @@ namespace MaskRaster
     public partial class frmSelectLayer : Window
     {
         List<Alternative> _Alternatives;
+        static readonly TaskCompletionSource<bool> s_tcs = new TaskCompletionSource<bool>();
 
         public frmSelectLayer(List<Alternative> alternatives)
         {
@@ -51,7 +52,7 @@ namespace MaskRaster
             txtFIAOutputDir.Text = Alternative.basefolderfia;
         }
 
-        private void btnLoadGridLayers_Click(object sender, RoutedEventArgs e)
+        private async void btnLoadGridLayers_Click(object sender, RoutedEventArgs e)
         {
             if (MapView.Active == null)
             {
@@ -81,7 +82,7 @@ namespace MaskRaster
 
                 if (alt.isPathSet(datatype) && layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
                 {
-                    AddLayer(alt.fullpath(datatype));
+                    await AddLayer(alt.fullpath(datatype));
                     numLayersAdded++;
                 }
             }
@@ -342,7 +343,7 @@ namespace MaskRaster
             }
         }
 
-        private void btnLoadFWWSEmax_Click(object sender, RoutedEventArgs e)
+        private async void btnLoadFWWSEmax_Click(object sender, RoutedEventArgs e)
         {
             if (MapView.Active == null)
             {
@@ -355,6 +356,8 @@ namespace MaskRaster
                 return;
             }
 
+            Task<bool> jobFinished = s_tcs.Task;
+
             var layers = MapView.Active.Map.GetLayersAsFlattenedList(); //.OfType<FeatureLayer>().Where(fl => fl.Name.Contains(xlsLayerName)).FirstOrDefault();
             int numLayersAdded = 0;
 
@@ -363,11 +366,13 @@ namespace MaskRaster
             {
                 if (alt.isPathSet(datatype) && layers.Where(fl => fl.Name == alt.layerName(datatype)).FirstOrDefault() == null)
                 {
-                    AddLayer(alt.fullpathfloodway(datatype));
+                    await AddLayer(alt.fullpathfloodway(datatype));
                     numLayersAdded++;
                 }
             }
+
             System.Windows.MessageBox.Show($"Number of layers added: {numLayersAdded}.");
+            await jobFinished;
         }
 
         private void btnReportWSEmax_Click(object sender, RoutedEventArgs e)

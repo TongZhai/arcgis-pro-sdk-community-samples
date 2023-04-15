@@ -37,6 +37,8 @@ namespace MaskRaster
     /// </summary>
     static class MaskRasterVM
     {
+        static readonly TaskCompletionSource<bool> s_tcs = new TaskCompletionSource<bool>();
+
         static int _bandindex = 0;
 
         public static List<Alternative> Alternatives;
